@@ -45,10 +45,30 @@ CCPal 把 Claude Code 的本地对话（`~/.claude/projects/*.jsonl`）做成可
 |---|---|---|
 | 1a | 拆出 `core/` + `hosts/` 骨架 + git init | ✅ |
 | 1b | Claude Code plugin（`.claude-plugin/` + `/ccpal` 命令 + Stop hook + bootstrap install.sh） | ✅ |
-| 1c | 把 `core/` bundle 进 plugin（解除 git-subdir 对父目录依赖） | ✅ 当前 |
+| 1c | 把 `core/` bundle 进 plugin（解除 git-subdir 对父目录依赖） | ✅ |
 | 1d | 推 GitHub + 真实环境验证 marketplace 流程（需要 Claude Code CLI 而非 Desktop） | ⏳ |
-| 2  | Codex MCP server（`open_ui` / `search` / `stats` tools） | ⏳ |
+| 2  | Codex MCP server（`ccpal-mcp.py` 5 tool · `codex mcp add` 注册） | ✅ |
+| 2.1 | （废弃）尝试用 plugin/marketplace 注册 — Codex Desktop 不读用户 marketplace | 🪦 |
+| 2.2 | install.sh 砍到 3 步，走 `codex mcp add` | ✅ 当前 |
+| 2.3 | 给 search_sessions / recent_sessions 加凭证脱敏（密码/API key 正则打码） | ⏳ |
 | 3  | OpenCode plugin（slash 命令 + 共享 MCP） | ⏳ |
+
+### Codex usage（已工作）
+
+```bash
+# 一键安装（前提：Claude Code plugin 的 install.sh 已跑过，core 已部署）
+bash hosts/codex/install.sh
+
+# Cmd+Q Codex Desktop 完全退出，重新打开
+# 模型在 Codex 里自动看到 5 个 tool：
+#   mcp__ccpal__open_ui
+#   mcp__ccpal__recent_sessions
+#   mcp__ccpal__search_sessions
+#   mcp__ccpal__get_session_text
+#   mcp__ccpal__stats
+```
+
+**关键发现**：Codex Desktop 完全忽略用户手写的 `[mcp_servers.X]` / `[marketplaces.X]` 块；唯一的注册路径是 CLI 子命令 `codex mcp add`。app.asar 反编译后确认 Electron 层只把 BundledPluginsMarketplace 喂给 Rust core，用户 marketplace 没有 mount 路径。
 
 ### Dev workflow
 
