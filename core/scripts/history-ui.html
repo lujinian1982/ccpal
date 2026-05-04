@@ -1,0 +1,1474 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>CCPal · Claude Code 历史</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+  :root {
+    --bg: #fafbfc;
+    --panel: #ffffff;
+    --border: #e6e8eb;
+    --border-soft: #f0f2f4;
+    --text: #1a1d21;
+    --text-2: #5f6873;
+    --text-3: #9aa3ad;
+    --accent: #2563eb;
+    --accent-bg: #eff6ff;
+    --accent-soft: #dbeafe;
+    --hl: #fef3c7;
+    --hl-strong: #fde047;
+    --user-bg: #f4f7fb;
+    --shadow-sm: 0 1px 2px rgba(15, 23, 42, .04);
+    --folder: #f59e0b;
+    --sidebar-w: 360px;
+    --att-w: 280px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; overflow: hidden; }
+  body {
+    font-family: -apple-system, "PingFang SC", "Helvetica Neue", "SF Pro Text", sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    font-size: 14px;
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* TOP BAR */
+  .topbar {
+    height: 52px;
+    background: var(--panel);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    padding: 0 16px;
+    gap: 10px;
+  }
+  .brand {
+    font-size: 14px;
+    font-weight: 600;
+    letter-spacing: -0.2px;
+    color: var(--text);
+    margin-right: 4px;
+    white-space: nowrap;
+  }
+  .brand .dot {
+    display: inline-block;
+    width: 6px; height: 6px;
+    background: #10b981;
+    border-radius: 50%;
+    margin-right: 6px;
+    vertical-align: middle;
+  }
+  .global-search {
+    flex: 1;
+    max-width: 520px;
+    position: relative;
+  }
+  .global-search input {
+    width: 100%;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 8px 36px 8px 34px;
+    font-size: 13px;
+    color: var(--text);
+    background: var(--bg);
+    font-family: inherit;
+    transition: all .15s;
+  }
+  .global-search input:focus {
+    outline: none;
+    border-color: var(--accent);
+    background: var(--panel);
+    box-shadow: 0 0 0 3px rgba(37,99,235,.08);
+  }
+  .global-search .icon {
+    position: absolute; left: 10px; top: 50%;
+    transform: translateY(-50%);
+    color: var(--text-3); font-size: 14px; pointer-events: none;
+  }
+  .global-search .kbd {
+    position: absolute; right: 8px; top: 50%;
+    transform: translateY(-50%);
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 1px 6px;
+    font-size: 10px;
+    color: var(--text-3);
+    font-family: ui-monospace, Menlo, monospace;
+  }
+  .nav-link {
+    text-decoration: none;
+    color: var(--text-2);
+    font-size: 13px;
+    padding: 6px 12px;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    background: var(--panel);
+    transition: all .1s;
+    white-space: nowrap;
+  }
+  .nav-link:hover { background: var(--accent-bg); border-color: var(--accent-soft); color: var(--accent); }
+  .stat {
+    font-size: 12px;
+    color: var(--text-3);
+    white-space: nowrap;
+  }
+  .stat b { color: var(--text-2); font-weight: 600; }
+
+  /* MAIN LAYOUT */
+  main {
+    display: grid;
+    grid-template-columns: var(--sidebar-w) 4px 1fr;
+    height: calc(100vh - 52px);
+  }
+
+  /* RESIZER */
+  .resizer {
+    background: transparent;
+    cursor: col-resize;
+    position: relative;
+    z-index: 5;
+    transition: background .15s;
+  }
+  .resizer::before {
+    content: "";
+    position: absolute;
+    left: 1px; right: 1px; top: 0; bottom: 0;
+    background: var(--border);
+  }
+  .resizer:hover::before, .resizer.dragging::before {
+    background: var(--accent);
+  }
+
+  /* LEFT */
+  aside {
+    background: var(--panel);
+    border-right: none;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  .crumbs {
+    padding: 12px 14px 8px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    flex-wrap: wrap;
+    border-bottom: 1px solid var(--border-soft);
+    min-height: 44px;
+  }
+  .crumbs .seg {
+    font-size: 12px;
+    color: var(--text-2);
+    padding: 3px 8px;
+    border-radius: 5px;
+    cursor: pointer;
+    background: transparent;
+    border: none;
+    font-family: inherit;
+    transition: background .1s;
+  }
+  .crumbs .seg:hover { background: var(--bg); color: var(--text); }
+  .crumbs .seg.last { color: var(--text); font-weight: 600; cursor: default; }
+  .crumbs .seg.last:hover { background: transparent; }
+  .crumbs .sep { color: var(--text-3); font-size: 11px; }
+  .crumbs .home { color: var(--accent); font-weight: 500; }
+
+  .controls {
+    padding: 8px 14px;
+    border-bottom: 1px solid var(--border-soft);
+    display: flex;
+    gap: 8px;
+    align-items: center;
+  }
+  .ctrl {
+    appearance: none;
+    border: 1px solid var(--border);
+    background: var(--bg);
+    border-radius: 6px;
+    padding: 5px 22px 5px 9px;
+    font-size: 12px;
+    color: var(--text-2);
+    font-family: inherit;
+    cursor: pointer;
+    background-image: url("data:image/svg+xml,%3Csvg width='8' height='5' viewBox='0 0 8 5' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1l3 3 3-3' stroke='%239aa3ad' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 8px center;
+    transition: all .1s;
+  }
+  .ctrl:hover { background-color: var(--panel); border-color: #d1d5db; color: var(--text); }
+  .ctrl:focus { outline: none; border-color: var(--accent); }
+
+  .list {
+    flex: 1;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+  .list::-webkit-scrollbar { width: 8px; }
+  .list::-webkit-scrollbar-thumb { background: #e1e4e8; border-radius: 4px; }
+  .list::-webkit-scrollbar-thumb:hover { background: #c1c7cd; }
+
+  .folders { padding: 10px 12px 4px; display: flex; flex-direction: column; gap: 4px; }
+  .folder {
+    display: grid;
+    grid-template-columns: 28px 1fr auto;
+    align-items: center;
+    gap: 10px;
+    padding: 9px 10px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background .1s;
+  }
+  .folder:hover { background: var(--bg); }
+  .folder .ico { width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; color: var(--folder); }
+  .folder .info { min-width: 0; }
+  .folder .name { font-size: 13px; font-weight: 600; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .folder .meta { font-size: 11px; color: var(--text-3); margin-top: 1px; font-variant-numeric: tabular-nums; }
+  .folder .arrow { color: var(--text-3); font-size: 14px; }
+
+  .section-head {
+    padding: 14px 16px 6px;
+    font-size: 11px; font-weight: 600;
+    color: var(--text-3); letter-spacing: 0.8px; text-transform: uppercase;
+  }
+  .group-header {
+    position: sticky; top: 0;
+    background: rgba(250,251,252,0.95);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    padding: 10px 16px 5px;
+    font-size: 11px; font-weight: 600;
+    color: var(--text-3); letter-spacing: 0.8px; text-transform: uppercase;
+    z-index: 1;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .group-header .count {
+    background: var(--border-soft); color: var(--text-2);
+    padding: 1px 7px; border-radius: 10px;
+    font-size: 10px; font-weight: 500; letter-spacing: 0;
+  }
+
+  .item {
+    padding: 10px 16px 11px;
+    border-bottom: 1px solid var(--border-soft);
+    cursor: pointer;
+    transition: background .1s;
+    border-left: 3px solid transparent;
+    margin-left: -3px;
+    padding-left: 13px;
+    position: relative;
+  }
+  .item:hover { background: var(--bg); }
+  .item.active { background: var(--accent-bg); border-left-color: var(--accent); }
+  .item .title {
+    font-size: 13.5px; color: var(--text); line-height: 1.45; margin-bottom: 5px;
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+    overflow: hidden; word-break: break-word; font-weight: 500;
+  }
+  .item .meta {
+    font-size: 11.5px; color: var(--text-3);
+    display: flex; align-items: center; gap: 8px; line-height: 1.3;
+  }
+  .item .meta .time { color: var(--text-2); font-weight: 500; font-variant-numeric: tabular-nums; }
+  .item .meta .sep { opacity: 0.4; }
+  .item .badge-wt {
+    background: rgba(245,158,11,.12); color: var(--folder);
+    border-radius: 4px; padding: 0 5px;
+    font-size: 10px; font-weight: 600; letter-spacing: 0.3px;
+  }
+  .item .hit {
+    margin-top: 6px; padding: 6px 8px;
+    background: var(--bg); border-radius: 4px;
+    font-size: 11.5px; color: var(--text-2); line-height: 1.5;
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+  }
+  .item mark { background: var(--hl); padding: 0 2px; border-radius: 2px; color: var(--text); }
+  .item.active mark { background: var(--hl-strong); }
+
+  .empty-list { padding: 60px 24px; text-align: center; color: var(--text-3); font-size: 13px; }
+  .empty-list .big { font-size: 28px; margin-bottom: 8px; opacity: 0.4; }
+
+  /* RIGHT detail */
+  .detail {
+    overflow: hidden;
+    display: grid;
+    grid-template-rows: auto 1fr;
+    grid-template-columns: 1fr;
+    background: var(--bg);
+    position: relative;
+  }
+  .detail.show-att .detail-body-wrap { grid-template-columns: 1fr 4px var(--att-w); }
+  .detail-body-wrap {
+    display: grid;
+    grid-template-columns: 1fr 0px 0px;
+    overflow: hidden;
+    transition: grid-template-columns .2s ease;
+  }
+
+  .detail-bar {
+    background: var(--panel);
+    border-bottom: 1px solid var(--border);
+    padding: 10px 24px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-height: 48px;
+  }
+  .crumb { flex: 1; min-width: 0; overflow: hidden; }
+  .crumb .proj-name {
+    font-size: 12px; color: var(--text-3);
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    font-family: ui-monospace, Menlo, monospace;
+  }
+  .crumb .doc-title {
+    font-size: 14px; font-weight: 600; color: var(--text);
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin-top: 1px;
+  }
+  .att-toggle {
+    display: flex; align-items: center; gap: 5px;
+    padding: 5px 10px; border-radius: 6px;
+    background: var(--bg); border: 1px solid var(--border);
+    cursor: pointer; font-size: 12px; color: var(--text-2);
+    font-family: inherit; transition: all .1s;
+  }
+  .att-toggle:hover { color: var(--text); border-color: #d1d5db; }
+  .att-toggle.active { background: var(--accent-bg); color: var(--accent); border-color: var(--accent-soft); }
+  .att-toggle .badge {
+    background: var(--accent); color: white;
+    padding: 0 5px; border-radius: 8px;
+    font-size: 10px; font-weight: 600;
+    min-width: 16px; text-align: center;
+  }
+  .att-toggle.active .badge { background: var(--accent); }
+
+  .copy-btn {
+    /* 暂时隐藏:导入到新对话方案待用户决定后再启用,代码保留 */
+    display: none !important;
+    align-items: center; gap: 5px;
+    padding: 5px 10px 5px 8px; border-radius: 6px;
+    background: var(--panel); color: var(--accent);
+    border: 1px solid var(--accent-soft);
+    cursor: pointer; font-size: 12px;
+    font-weight: 500; font-family: inherit;
+    transition: all .12s cubic-bezier(.2,.8,.2,1);
+    white-space: nowrap;
+  }
+  .copy-btn:hover { background: var(--accent-bg); border-color: #93c5fd; }
+  .copy-btn:active { transform: scale(.97); }
+  .copy-btn svg { width: 13px; height: 13px; }
+
+  #cc-toast {
+    position: fixed; bottom: 24px;
+    left: 50%; transform: translateX(-50%) translateY(80px);
+    background: rgba(26,29,33,.95);
+    color: white; padding: 12px 22px;
+    border-radius: 12px; font-size: 13px;
+    box-shadow: 0 12px 32px rgba(0,0,0,.25);
+    opacity: 0; transition: all .25s cubic-bezier(.2,.8,.2,1);
+    z-index: 9999; pointer-events: none;
+    font-weight: 500;
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    max-width: 480px; text-align: center;
+    letter-spacing: 0.1px;
+  }
+  #cc-toast.show {
+    transform: translateX(-50%) translateY(0); opacity: 1;
+  }
+  #cc-toast .icon {
+    display: inline-block; margin-right: 6px;
+    color: #6ee7b7; font-weight: 700;
+  }
+
+
+  .find-bar {
+    display: flex; align-items: center; gap: 6px;
+    background: var(--bg); border: 1px solid var(--border);
+    border-radius: 8px; padding: 3px 4px 3px 10px;
+    transition: all .15s;
+  }
+  .find-bar:focus-within { border-color: var(--accent); background: var(--panel); }
+  .find-bar input {
+    border: none; background: transparent;
+    font-size: 12px; width: 140px;
+    color: var(--text); font-family: inherit; outline: none;
+  }
+  .find-bar input::placeholder { color: var(--text-3); }
+  .find-bar .nav {
+    color: var(--text-3); font-size: 11px; padding: 0 4px;
+    font-variant-numeric: tabular-nums;
+    min-width: 38px; text-align: center;
+  }
+  .find-bar button {
+    background: transparent; border: none; color: var(--text-2);
+    width: 22px; height: 22px; border-radius: 4px;
+    cursor: pointer; font-size: 14px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .find-bar button:hover { background: var(--border-soft); color: var(--text); }
+
+  .detail-body {
+    overflow-y: auto;
+    padding: 24px 32px 80px;
+  }
+  .detail-body::-webkit-scrollbar { width: 10px; }
+  .detail-body::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 5px; }
+
+  /* 仿 Claude Code:user 浅蓝胶囊,assistant 无卡片纯文字 */
+  .msg {
+    max-width: 760px;
+    margin: 0 auto 18px;
+    padding: 0;
+    background: transparent;
+    border: none;
+    box-shadow: none;
+    scroll-margin-top: 60px;
+    position: relative;
+  }
+  .msg.flash::before {
+    content: ''; position: absolute;
+    inset: -8px -12px; border-radius: 12px;
+    background: rgba(37,99,235,.12);
+    pointer-events: none;
+    animation: flashFade 1.2s ease-out;
+  }
+  @keyframes flashFade {
+    from { background: rgba(37,99,235,.22); }
+    to { background: rgba(37,99,235,0); }
+  }
+  /* role 标签:隐藏(靠样式区分) */
+  .msg .role-line, .msg .role { display: none; }
+
+  /* USER 消息:浅蓝胶囊 */
+  .msg.user .block-text {
+    background: var(--accent-bg);
+    color: var(--accent);
+    padding: 10px 14px;
+    border-radius: 14px;
+    display: inline-block;
+    max-width: 92%;
+    font-size: 14px;
+    line-height: 1.7;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+  .msg.user .block-text strong { color: var(--accent); }
+  /* USER 消息一般没工具块,但若有也保持原样 */
+
+  /* ASSISTANT 消息:无卡片,纯文字 */
+  .msg.assistant .block-text {
+    background: transparent;
+    color: var(--text);
+    padding: 0;
+    font-size: 14px;
+    line-height: 1.75;
+  }
+
+  /* 相对时间 */
+  .msg .ts-rel {
+    display: block;
+    font-size: 11px;
+    color: var(--text-3);
+    margin-top: 6px;
+    font-variant-numeric: tabular-nums;
+  }
+  .msg.user .ts-rel { padding-left: 14px; }
+  .msg mark { background: var(--hl); padding: 1px 3px; border-radius: 3px; color: var(--text); }
+  .msg mark.current { background: var(--hl-strong); box-shadow: 0 0 0 2px rgba(252, 211, 77, 0.4); }
+
+  /* === Claude Code 风格 blocks === */
+  .block-text { font-size: 13.5px; line-height: 1.75; color: var(--text); white-space: pre-wrap; word-break: break-word; }
+  .block-text + .block-text, .block-text + details, details + .block-text, details + details { margin-top: 6px; }
+
+  .block-tool, .block-result, .block-thinking {
+    border: 1px solid var(--border-soft);
+    border-radius: 7px;
+    overflow: hidden;
+    background: rgba(0,0,0,.015);
+  }
+  .block-tool summary, .block-result summary, .block-thinking summary {
+    padding: 6px 12px;
+    cursor: pointer;
+    list-style: none;
+    font-size: 12px;
+    color: var(--text-2);
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+    display: flex; align-items: center; gap: 8px;
+    user-select: none; -webkit-user-select: none;
+  }
+  .block-tool summary::-webkit-details-marker,
+  .block-result summary::-webkit-details-marker,
+  .block-thinking summary::-webkit-details-marker { display: none; }
+  .block-tool summary::before,
+  .block-result summary::before,
+  .block-thinking summary::before {
+    content: "▸"; color: var(--text-3); font-size: 10px;
+    display: inline-block; width: 10px; flex-shrink: 0;
+    transition: transform .12s;
+  }
+  .block-tool[open] summary::before,
+  .block-result[open] summary::before,
+  .block-thinking[open] summary::before { transform: rotate(90deg); }
+  .block-tool summary:hover, .block-result summary:hover, .block-thinking summary:hover { background: rgba(0,0,0,.03); }
+  .block-tool .t-name { font-weight: 600; color: var(--accent); flex-shrink: 0; }
+  .block-tool .t-arg { color: var(--text-3); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; min-width: 0; }
+  .block-tool pre, .block-result .body, .block-thinking .body {
+    margin: 0; padding: 8px 14px 10px;
+    background: rgba(0,0,0,.03);
+    border-top: 1px solid var(--border-soft);
+    font-size: 11.5px; line-height: 1.55;
+    color: var(--text-2);
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+    white-space: pre-wrap; word-break: break-word;
+    overflow-x: auto; max-height: 420px; overflow-y: auto;
+  }
+  .block-result.error { background: rgba(239,68,68,.04); border-color: rgba(239,68,68,.18); }
+  .block-result.error summary::before { color: #ef4444; }
+  .block-result .r-preview { color: var(--text-2); flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+  .block-thinking { background: rgba(124,58,237,.04); border-color: rgba(124,58,237,.15); }
+  .block-thinking summary { color: #7c3aed; }
+  .block-thinking summary::before { color: #7c3aed; }
+
+  /* markdown lite */
+  .md-code {
+    background: #1a1d21; color: #e6e8eb;
+    padding: 10px 14px; border-radius: 6px;
+    margin: 8px 0; overflow-x: auto;
+    font-size: 12px; line-height: 1.6;
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+    white-space: pre; word-break: normal;
+  }
+  .md-inline {
+    background: rgba(0,0,0,.06);
+    padding: 1px 5px; border-radius: 3px;
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+    font-size: 90%; word-break: break-word;
+  }
+  .block-text strong { font-weight: 700; color: var(--text); }
+  .block-text em { font-style: italic; }
+  .block-text .md-h2 { font-size: 17px; font-weight: 700; margin: 14px 0 6px; }
+  .block-text .md-h3 { font-size: 15px; font-weight: 700; margin: 12px 0 5px; }
+  .block-text .md-h4 { font-size: 13.5px; font-weight: 700; margin: 10px 0 4px; }
+  .block-text ul { margin: 6px 0 6px 22px; padding: 0; }
+  .block-text li { margin: 2px 0; list-style: disc; }
+  .block-text a { color: var(--accent); text-decoration: none; }
+  .block-text a:hover { text-decoration: underline; }
+
+  /* === Markdown 完整渲染 === */
+  .block-text .md-table {
+    border-collapse: collapse; margin: 10px 0; font-size: 12.5px;
+    border: 1px solid var(--border); border-radius: 6px;
+    overflow: hidden; display: table;
+  }
+  .block-text .md-table th, .block-text .md-table td {
+    border: 1px solid var(--border); padding: 6px 12px; text-align: left;
+  }
+  .block-text .md-table th { background: var(--bg); font-weight: 600; color: var(--text); }
+  .block-text .md-table td { color: var(--text-2); }
+  .block-text .md-quote {
+    border-left: 3px solid var(--accent-soft);
+    padding: 6px 0 6px 12px; margin: 8px 0;
+    color: var(--text-2); background: rgba(37,99,235,.03);
+    border-radius: 0 6px 6px 0;
+  }
+  .block-text .md-task {
+    display: flex; align-items: flex-start; gap: 8px;
+    margin: 3px 0; font-size: 13.5px;
+  }
+  .block-text .md-task input { margin: 4px 0 0 0; cursor: default; }
+  .block-text .md-task.done span { color: var(--text-3); text-decoration: line-through; }
+  .block-text .md-hr { border: none; border-top: 1px solid var(--border); margin: 12px 0; }
+  .block-text .md-ol { margin: 6px 0 6px 22px; padding: 0; }
+  .block-text .md-oli { list-style: decimal; margin: 2px 0; padding-left: 4px; }
+  .block-text del { text-decoration: line-through; color: var(--text-3); }
+  .block-text br + br { display: block; content: ""; margin-top: 6px; }
+
+
+
+  .empty-detail {
+    height: 100%;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    color: var(--text-3); text-align: center; padding: 40px;
+  }
+  .empty-detail .big { font-size: 36px; opacity: 0.25; margin-bottom: 14px; }
+  .empty-detail .tip { font-size: 13px; line-height: 1.7; }
+  .empty-detail .tip kbd {
+    background: var(--panel); border: 1px solid var(--border); border-bottom-width: 2px;
+    border-radius: 4px; padding: 1px 6px;
+    font-family: ui-monospace, Menlo, monospace; font-size: 11px; margin: 0 2px;
+  }
+
+  .loading { padding: 40px; text-align: center; color: var(--text-3); font-size: 12px; }
+
+  /* ATTACHMENTS PANEL */
+  
+  .att-resizer {
+    background: transparent;
+    cursor: col-resize;
+    position: relative;
+    z-index: 5;
+    transition: background .15s;
+  }
+  .att-resizer::before {
+    content: ""; position: absolute;
+    left: 1px; right: 1px; top: 0; bottom: 0;
+    background: var(--border);
+  }
+  .att-resizer:hover::before, .att-resizer.dragging::before { background: var(--accent); }
+  .detail.show-att .att-resizer { background: var(--bg); }
+  .detail:not(.show-att) .att-resizer { display: none; }
+
+  .att-panel {
+    background: var(--panel);
+    border-left: 1px solid var(--border);
+    overflow-y: auto;
+    overflow-x: hidden;
+  }
+  .att-panel::-webkit-scrollbar { width: 8px; }
+  .att-panel::-webkit-scrollbar-thumb { background: #e1e4e8; border-radius: 4px; }
+  .att-panel .head {
+    padding: 14px 16px 8px;
+    font-size: 11px; font-weight: 600;
+    color: var(--text-3); letter-spacing: 0.8px; text-transform: uppercase;
+    position: sticky; top: 0; background: var(--panel);
+    border-bottom: 1px solid var(--border-soft);
+  }
+  .att-panel .empty {
+    padding: 40px 20px; text-align: center;
+    color: var(--text-3); font-size: 12px;
+  }
+  .att {
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--border-soft);
+    cursor: pointer;
+    transition: background .1s;
+  }
+  .att:hover { background: var(--bg); }
+  .att .row1 {
+    display: flex; align-items: center; gap: 8px;
+    margin-bottom: 4px;
+  }
+  .att .ico {
+    width: 22px; height: 22px;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+    border-radius: 5px;
+    font-size: 11px;
+  }
+  .att .name {
+    font-size: 12.5px; font-weight: 500;
+    color: var(--text);
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    flex: 1; min-width: 0;
+  }
+  .att .path {
+    font-size: 10.5px;
+    color: var(--text-3);
+    font-family: ui-monospace, Menlo, monospace;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    direction: rtl; text-align: left;
+    margin-left: 30px;
+    margin-bottom: 4px;
+  }
+  .att .actions {
+    display: flex; gap: 4px;
+    margin-left: 30px;
+  }
+  .att .actions button {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 2px 8px;
+    font-size: 10.5px;
+    color: var(--text-2);
+    cursor: pointer;
+    font-family: inherit;
+    transition: all .1s;
+  }
+  .att .actions button:hover {
+    background: var(--accent-bg); color: var(--accent);
+    border-color: var(--accent-soft);
+  }
+  .att .actions button.go { color: var(--accent); border-color: var(--accent-soft); }
+  .att.gone .ico { opacity: 0.4; }
+  .att.gone .name { color: var(--text-3); text-decoration: line-through; }
+  .att .miss-tag {
+    margin-left: auto; font-size: 9px;
+    color: var(--text-3);
+    background: var(--border-soft);
+    padding: 1px 5px; border-radius: 3px;
+  }
+
+  .ico-pdf { background: #fee2e2; color: #b91c1c; }
+  .ico-img { background: #ddd6fe; color: #6d28d9; }
+  .ico-doc { background: #dbeafe; color: #1d4ed8; }
+  .ico-code { background: #d1fae5; color: #065f46; }
+  .ico-data { background: #fef3c7; color: #92400e; }
+  .ico-video { background: #fce7f3; color: #be185d; }
+  .ico-audio { background: #e0e7ff; color: #4338ca; }
+  .ico-folder { background: #fef3c7; color: #b45309; }
+  .ico-other { background: #f3f4f6; color: #6b7280; }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="brand"><span class="dot"></span>CCPal <span style="color:var(--text-3);font-weight:400;margin-left:4px;">· 历史</span></div>
+  <div class="global-search">
+    <span class="icon">⌕</span>
+    <input id="q" type="search" placeholder="全局搜索 — 标题、对话内容…">
+    <span class="kbd">/</span>
+  </div>
+  <a href="/stats" class="nav-link">统计</a>
+  <a href="/health" class="nav-link">健康</a>
+  <a href="/budget" class="nav-link">套餐</a>
+  <a href="/safety" class="nav-link">数据安全</a>
+  <div class="stat" id="stat"></div>
+</div>
+
+<main>
+  <aside>
+    <div class="crumbs" id="crumbs"></div>
+    <div class="controls">
+      <select class="ctrl" id="sort">
+        <option value="mtime">最近活动</option>
+        <option value="ctime">最近开始</option>
+        <option value="msg_count">消息最多</option>
+      </select>
+    </div>
+    <div class="list" id="list"><div class="loading">索引加载中…</div></div>
+  </aside>
+
+  <div class="resizer" id="resizer" title="拖动调整宽度"></div>
+
+  <section class="detail" id="detail">
+    <div class="detail-bar" id="detail-bar" style="display:none">
+      <div class="crumb">
+        <div class="proj-name" id="crumb-proj"></div>
+        <div class="doc-title" id="crumb-title"></div>
+      </div>
+      <button class="copy-btn" id="copy-btn" title="复制对话上下文,粘贴到新 Claude Code 对话即可续接">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+        导入到新对话
+      </button>
+      <button class="att-toggle" id="att-toggle" title="切换附件清单">
+        <span>附件</span><span class="badge" id="att-count">0</span>
+      </button>
+      <div class="find-bar">
+        <input id="find" type="search" placeholder="在此对话中查找…">
+        <span class="nav" id="find-nav">—</span>
+        <button id="find-prev" title="上一个 (Shift+Enter)">‹</button>
+        <button id="find-next" title="下一个 (Enter)">›</button>
+      </div>
+    </div>
+
+    <div class="detail-body-wrap" id="dbw">
+      <div class="detail-body" id="detail-body">
+        <div class="empty-detail">
+          <div class="big">⌕</div>
+          <div class="tip">
+            按 <kbd>/</kbd> 全局搜索 · 选中会话后按 <kbd>⌘F</kbd> 在当前对话中查找<br>
+            <kbd>↑</kbd> <kbd>↓</kbd> 切换会话 · 拖动中间分割条调宽度
+          </div>
+        </div>
+      </div>
+      <div class="att-resizer" id="att-resizer" title="拖动调整附件面板宽度"></div>
+      <div class="att-panel" id="att-panel"></div>
+    </div>
+  </section>
+</main>
+
+<script>
+const FOLDER_SVG = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>`;
+
+let ALL = [];
+let BASE_DIR = '';
+let CURRENT_PATH = '';
+let CURRENT = null;
+let CURRENT_DATA = null;
+let CURRENT_ATTS = [];
+let SHOW_ATT = localStorage.getItem('cc-show-att') === '1';
+
+const $ = id => document.getElementById(id);
+const $q = $('q'), $sort = $('sort');
+const $crumbs = $('crumbs'), $list = $('list'), $stat = $('stat');
+const $bar = $('detail-bar'), $body = $('detail-body');
+const $crumbProj = $('crumb-proj'), $crumbTitle = $('crumb-title');
+const $find = $('find'), $findNav = $('find-nav');
+const $detail = $('detail'), $attPanel = $('att-panel');
+const $attToggle = $('att-toggle'), $attCount = $('att-count');
+
+const escapeHtml = s => String(s || '').replace(/[&<>"']/g, m =>
+  ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+const escapeRe = s => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+function highlight(text, q, cls = '') {
+  if (!q) return escapeHtml(text);
+  return escapeHtml(text).replace(new RegExp(escapeRe(q), 'gi'),
+    m => `<mark class="${cls}">${m}</mark>`);
+}
+
+/* 时间 */
+function fmtTime(ts) {
+  const d = new Date(ts * 1000), p = n => String(n).padStart(2, '0');
+  return `${p(d.getHours())}:${p(d.getMinutes())}`;
+}
+function fmtDateLong(ts) {
+  const d = new Date(ts * 1000), p = n => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`;
+}
+function getGroup(ts) {
+  const d = new Date(ts * 1000), now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const target = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+  const diff = Math.floor((today - target) / 86400000);
+  if (diff === 0) return { key: 't', label: '今天', order: 0 };
+  if (diff === 1) return { key: 'y', label: '昨天', order: 1 };
+  if (diff < 7) {
+    const dn = ['周日','周一','周二','周三','周四','周五','周六'][d.getDay()];
+    return { key: `w${diff}`, label: `本周 · ${dn}`, order: 2 + diff };
+  }
+  if (diff < 30) return { key: 'm', label: '本月较早', order: 50 };
+  if (d.getFullYear() === now.getFullYear()) return { key: `mo${d.getMonth()}`, label: `${d.getMonth()+1} 月`, order: 100 + (12 - d.getMonth()) };
+  return { key: `yr${d.getFullYear()}`, label: `${d.getFullYear()} 年`, order: 1000 + (now.getFullYear() - d.getFullYear()) };
+}
+
+/* 路径 */
+function computeBaseDir() {
+  const cwds = ALL.map(s => s.cwd).filter(c => c && c !== '(未记录)' && c.startsWith('/'));
+  if (!cwds.length) return '';
+  let prefix = cwds[0];
+  for (const c of cwds) {
+    while (prefix && !c.startsWith(prefix + '/') && c !== prefix) {
+      prefix = prefix.substring(0, prefix.lastIndexOf('/'));
+    }
+    if (!prefix) return '';
+  }
+  return prefix;
+}
+
+/* 数据 */
+async function loadIndex() {
+  const r = await fetch('/api/index?_=' + Date.now());
+  ALL = await r.json();
+  BASE_DIR = computeBaseDir();
+  CURRENT_PATH = BASE_DIR;
+  render();
+}
+
+function getFiltered() {
+  const q = $q.value.trim().toLowerCase();
+  const sortKey = $sort.value;
+  let arr = ALL.filter(s => {
+    if (q) {
+      if (!s.search_blob.includes(q) && !s.title.toLowerCase().includes(q)) return false;
+    }
+    return true;
+  });
+  arr.sort((a, b) => (b[sortKey] || 0) - (a[sortKey] || 0));
+  return arr;
+}
+
+function getView(filtered) {
+  const direct = [];
+  const subMap = new Map();
+  for (const s of filtered) {
+    const cwd = s.cwd;
+    if (!cwd || cwd === '(未记录)') {
+      if (!CURRENT_PATH) direct.push(s);
+      continue;
+    }
+    if (cwd === CURRENT_PATH) {
+      direct.push(s);
+    } else if (CURRENT_PATH === '' || cwd.startsWith(CURRENT_PATH + '/')) {
+      const rest = CURRENT_PATH === ''
+        ? cwd.replace(/^\//, '')
+        : cwd.substring(CURRENT_PATH.length + 1);
+      const sub = rest.split('/')[0];
+      if (!subMap.has(sub)) subMap.set(sub, []);
+      subMap.get(sub).push(s);
+    }
+  }
+  const subdirs = [...subMap.entries()].map(([name, ss]) => ({
+    name,
+    fullpath: CURRENT_PATH ? `${CURRENT_PATH}/${name}` : `/${name}`,
+    count: ss.length,
+    msgs: ss.reduce((a, s) => a + s.msg_count, 0),
+    last_mtime: ss.reduce((m, s) => Math.max(m, s.mtime), 0),
+  })).sort((a, b) => b.last_mtime - a.last_mtime);
+  return { subdirs, direct };
+}
+
+function renderCrumbs() {
+  if (!CURRENT_PATH) {
+    $crumbs.innerHTML = `<button class="seg last home">全部</button>`;
+    return;
+  }
+  const segs = [{ label: '全部', path: '' }];
+  const parts = CURRENT_PATH.split('/').filter(Boolean);
+  let cum = '';
+  for (const p of parts) { cum += '/' + p; segs.push({ label: p, path: cum }); }
+  let html = '';
+  segs.forEach((s, i) => {
+    if (i > 0) html += `<span class="sep">›</span>`;
+    const isLast = i === segs.length - 1;
+    const isHome = s.path === '';
+    html += `<button class="seg ${isLast?'last':''} ${isHome?'home':''}" data-path="${escapeHtml(s.path)}">${escapeHtml(s.label)}</button>`;
+  });
+  $crumbs.innerHTML = html;
+  $crumbs.querySelectorAll('.seg').forEach(el => {
+    if (el.classList.contains('last')) return;
+    el.addEventListener('click', () => { CURRENT_PATH = el.dataset.path; render(); });
+  });
+}
+
+function render() {
+  renderCrumbs();
+  const filtered = getFiltered();
+  const { subdirs, direct } = getView(filtered);
+  const total = filtered.length;
+  const q = $q.value.trim();
+
+  $stat.innerHTML = q
+    ? `命中 <b>${total}</b> / ${ALL.length}`
+    : `<b>${ALL.length}</b> 个会话`;
+
+  let html = '';
+
+  if (subdirs.length) {
+    html += `<div class="section-head">${CURRENT_PATH ? '子文件夹' : '项目'} · ${subdirs.length}</div>`;
+    html += `<div class="folders">`;
+    for (const sd of subdirs) {
+      html += `
+        <div class="folder" data-path="${escapeHtml(sd.fullpath)}">
+          <div class="ico">${FOLDER_SVG}</div>
+          <div class="info">
+            <div class="name">${highlight(sd.name, q)}</div>
+            <div class="meta">${sd.count} 个会话 · ${sd.msgs} 条消息 · ${fmtTime(sd.last_mtime)}</div>
+          </div>
+          <div class="arrow">›</div>
+        </div>`;
+    }
+    html += `</div>`;
+  }
+
+  if (direct.length) {
+    if (subdirs.length) html += `<div class="section-head">本目录会话 · ${direct.length}</div>`;
+    const map = new Map();
+    for (const s of direct) {
+      const g = getGroup(s.mtime);
+      if (!map.has(g.key)) map.set(g.key, { ...g, items: [] });
+      map.get(g.key).items.push(s);
+    }
+    const groups = [...map.values()].sort((a, b) => a.order - b.order);
+    for (const g of groups) {
+      html += `<div class="group-header">${escapeHtml(g.label)}<span class="count">${g.items.length}</span></div>`;
+      for (const s of g.items.slice(0, 200)) {
+        const showHit = q && s.search_blob.includes(q.toLowerCase()) && !s.title.toLowerCase().includes(q.toLowerCase());
+        let snip = '';
+        if (showHit) {
+          const idx = s.search_blob.indexOf(q.toLowerCase());
+          const start = Math.max(0, idx - 30);
+          const end = Math.min(s.search_blob.length, idx + q.length + 80);
+          snip = `<div class="hit">…${highlight(s.search_blob.slice(start, end), q)}…</div>`;
+        }
+        html += `
+          <div class="item ${CURRENT===s.path?'active':''}" data-path="${escapeHtml(s.path)}">
+            <div class="title">${highlight(s.title, q)}</div>
+            <div class="meta">
+              <span class="time">${fmtTime(s.mtime)}</span>
+              <span class="sep">·</span>
+              <span class="count">${s.msg_count} 条</span>
+              ${s.is_worktree ? `<span class="badge-wt">worktree</span>` : ''}
+            </div>
+            ${snip}
+          </div>`;
+      }
+    }
+  }
+
+  if (!subdirs.length && !direct.length) {
+    html = `<div class="empty-list"><div class="big">⌀</div>本路径下没有会话<br><span style="font-size:11px">${q ? '换个关键词' : '点击面包屑返回上层'}</span></div>`;
+  }
+
+  $list.innerHTML = html;
+  $list.querySelectorAll('.folder').forEach(el => {
+    el.addEventListener('click', () => { CURRENT_PATH = el.dataset.path; render(); $list.scrollTop = 0; });
+  });
+  $list.querySelectorAll('.item').forEach(el => {
+    el.addEventListener('click', () => openSession(el.dataset.path));
+  });
+}
+
+/* 详情 */
+async function openSession(path) {
+  CURRENT = path;
+  document.querySelectorAll('.item').forEach(el =>
+    el.classList.toggle('active', el.dataset.path === path));
+  const meta = ALL.find(s => s.path === path);
+  $bar.style.display = 'flex';
+  $crumbProj.textContent = meta?.cwd || '';
+  $crumbTitle.textContent = meta?.title || '(无标题)';
+  $body.innerHTML = '<div class="loading">读取会话…</div>';
+  const r = await fetch('/api/session?path=' + encodeURIComponent(path) + '&_=' + Date.now());
+  const data = await r.json();
+  CURRENT_DATA = data;
+  computeAttachments();
+  renderDetail();
+  renderAttachments();
+  applyAttPanel();
+}
+
+function computeAttachments() {
+  const map = new Map();  // path -> { path, msg_idx[] }
+  CURRENT_DATA.messages.forEach((m, i) => {
+    if (!m.attachments) return;
+    for (const p of m.attachments) {
+      if (!map.has(p)) map.set(p, { path: p, msgs: [] });
+      map.get(p).msgs.push(i);
+    }
+  });
+  CURRENT_ATTS = [...map.values()].sort((a, b) => a.path.localeCompare(b.path));
+  $attCount.textContent = CURRENT_ATTS.length;
+  $attToggle.style.display = CURRENT_ATTS.length ? 'flex' : 'none';
+}
+
+function renderMarkdown(text, hl) {
+  if (!text) return '';
+  let html = escapeHtml(text);
+  // 1. 代码块占位
+  const codes = [];
+  html = html.replace(/```([a-zA-Z0-9_+\-]+)?\n?([\s\S]*?)```/g, (m, lang, code) => {
+    codes.push(`<pre class="md-code">${code}</pre>`);
+    return `\u0000C${codes.length-1}\u0000`;
+  });
+  // 2. 内联代码占位(避免被其他规则破坏)
+  const inlines = [];
+  html = html.replace(/`([^`\n]+)`/g, (m, c) => {
+    inlines.push(`<code class="md-inline">${c}</code>`);
+    return `\u0000I${inlines.length-1}\u0000`;
+  });
+  // 3. 表格
+  html = html.replace(/^(\|.+\|)\s*\n\|[\s\-:|]+\|\s*\n((?:\|.+\|\s*\n?)+)/gm, (m, header, body) => {
+    const ths = header.replace(/^\||\|$/g, '').split('|').map(c => c.trim());
+    const rows = body.trim().split('\n').map(line =>
+      line.replace(/^\||\|$/g, '').split('|').map(c => c.trim())
+    );
+    let t = '<table class="md-table"><thead><tr>';
+    t += ths.map(c => `<th>${c}</th>`).join('');
+    t += '</tr></thead><tbody>';
+    for (const row of rows) t += '<tr>' + row.map(c => `<td>${c}</td>`).join('') + '</tr>';
+    return t + '</tbody></table>';
+  });
+  // 4. 标题
+  html = html.replace(/^####\s+(.+)$/gm, '<div class="md-h4">$1</div>');
+  html = html.replace(/^###\s+(.+)$/gm, '<div class="md-h3">$1</div>');
+  html = html.replace(/^##\s+(.+)$/gm, '<div class="md-h2">$1</div>');
+  html = html.replace(/^#\s+(.+)$/gm, '<div class="md-h2">$1</div>');
+  // 5. 水平线
+  html = html.replace(/^[\-*_]{3,}\s*$/gm, '<hr class="md-hr">');
+  // 6. 引用 (multi-line)
+  html = html.replace(/(?:^&gt;\s?.*(?:\n|$))+/gm, m => {
+    const lines = m.trim().split('\n').map(l => l.replace(/^&gt;\s?/, ''));
+    return `<blockquote class="md-quote">${lines.join('<br>')}</blockquote>`;
+  });
+  // 7. 任务列表(优先于普通列表)
+  html = html.replace(/^[\-*]\s+\[([ xX])\]\s+(.+)$/gm, (m, c, t) => {
+    const done = c.trim() ? ' done' : '';
+    const checked = c.trim() ? ' checked' : '';
+    return `<div class="md-task${done}"><input type="checkbox" disabled${checked}><span>${t}</span></div>`;
+  });
+  // 8. 数字列表
+  html = html.replace(/^(\d+)\.\s+(.+)$/gm, '<li class="md-oli">$2</li>');
+  html = html.replace(/(<li class="md-oli">[\s\S]*?<\/li>(?:\n?<li class="md-oli">[\s\S]*?<\/li>)*)/g, '<ol class="md-ol">$1</ol>');
+  // 9. 无序列表
+  html = html.replace(/^[\-*]\s+(.+)$/gm, '<li>$1</li>');
+  html = html.replace(/(<li>(?:.|\n)*?<\/li>(?:\n<li>(?:.|\n)*?<\/li>)*)/g, '<ul>$1</ul>');
+  // 10. 粗体/斜体/删除线
+  html = html.replace(/\*\*([^*\n]+)\*\*/g, '<strong>$1</strong>');
+  html = html.replace(/~~([^~\n]+)~~/g, '<del>$1</del>');
+  html = html.replace(/(?<![*\w])\*([^*\n]+)\*(?![*\w])/g, '<em>$1</em>');
+  // 11. 链接 + 自动链接
+  html = html.replace(/\[([^\]]+)\]\(([^)\s]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>');
+  html = html.replace(/(?<![">=])(https?:\/\/[^\s<"]+)/g, '<a href="$1" target="_blank" rel="noopener">$1</a>');
+  // 12. 还原占位
+  html = html.replace(/\u0000I(\d+)\u0000/g, (_, i) => inlines[parseInt(i)]);
+  html = html.replace(/\u0000C(\d+)\u0000/g, (_, i) => codes[parseInt(i)]);
+  // 13. 高亮搜索
+  if (hl) {
+    const re = new RegExp(escapeRe(hl), 'gi');
+    html = html.split(/(<[^>]+>)/).map((seg, i) =>
+      i % 2 === 0 ? seg.replace(re, m => `<mark>${m}</mark>`) : seg
+    ).join('');
+  }
+  return html;
+}
+
+function shortInput(input) {
+  if (!input || typeof input !== 'object') return '';
+  if (input.file_path) return input.file_path;
+  if (input.path) return input.path;
+  if (input.notebook_path) return input.notebook_path;
+  if (input.command) {
+    const c = String(input.command);
+    return c.length > 100 ? c.slice(0, 100) + '…' : c;
+  }
+  if (input.pattern) return input.pattern;
+  if (input.query) return input.query;
+  if (input.url) return input.url;
+  if (input.description) return input.description;
+  if (input.prompt) {
+    const p = String(input.prompt);
+    return p.length > 100 ? p.slice(0, 100) + '…' : p;
+  }
+  for (const k of Object.keys(input)) {
+    const v = input[k];
+    if (typeof v === 'string') return `${k}: ${v.slice(0, 80)}`;
+  }
+  return '';
+}
+
+function renderBlock(b, hl) {
+  if (b.type === 'text') {
+    return `<div class="block-text">${renderMarkdown(b.text, hl)}</div>`;
+  }
+  if (b.type === 'tool_use') {
+    const argText = shortInput(b.input);
+    const fullInput = JSON.stringify(b.input, null, 2);
+    const hasHit = hl && (b.name + ' ' + fullInput).toLowerCase().includes(hl.toLowerCase());
+    return `<details class="block-tool"${hasHit?' open':''}>
+      <summary><span class="t-name">${escapeHtml(b.name)}</span><span class="t-arg">${highlight(argText, hl)}</span></summary>
+      <pre>${highlight(fullInput, hl)}</pre>
+    </details>`;
+  }
+  if (b.type === 'tool_result') {
+    const preview = (b.text || '').replace(/\s+/g, ' ').slice(0, 120);
+    const hasHit = hl && (b.text || '').toLowerCase().includes(hl.toLowerCase());
+    const cls = b.is_error ? 'block-result error' : 'block-result';
+    const more = b.text && b.text.length > 120 ? '…' : '';
+    return `<details class="${cls}"${hasHit?' open':''}>
+      <summary><span class="r-preview">${highlight(preview || '(空结果)', hl)}${more}</span></summary>
+      <div class="body">${highlight(b.text || '(空)', hl)}</div>
+    </details>`;
+  }
+  if (b.type === 'thinking') {
+    const hasHit = hl && (b.text || '').toLowerCase().includes(hl.toLowerCase());
+    return `<details class="block-thinking"${hasHit?' open':''}>
+      <summary>thinking · ${(b.text || '').length} 字</summary>
+      <div class="body">${highlight(b.text || '', hl)}</div>
+    </details>`;
+  }
+  return '';
+}
+
+function relTime(tsStr) {
+  if (!tsStr) return '';
+  const t = new Date(tsStr).getTime();
+  if (isNaN(t)) return '';
+  const now = Date.now();
+  const diff = (now - t) / 1000;
+  if (diff < 60) return '刚刚';
+  if (diff < 3600) return `${Math.floor(diff/60)}m ago`;
+  if (diff < 86400) return `${Math.floor(diff/3600)}h ago`;
+  if (diff < 7*86400) return `${Math.floor(diff/86400)}d ago`;
+  const d = new Date(t);
+  const sameYear = d.getFullYear() === new Date().getFullYear();
+  const p = n => String(n).padStart(2,'0');
+  if (sameYear) return `${d.getMonth()+1}月${d.getDate()}日 ${p(d.getHours())}:${p(d.getMinutes())}`;
+  return `${d.getFullYear()}/${d.getMonth()+1}/${d.getDate()}`;
+}
+
+function renderDetail() {
+  const q = $q.value.trim();
+  const f = $find.value.trim();
+  const hl = f || q;
+  let html = '';
+  CURRENT_DATA.messages.forEach((m, i) => {
+    const blocks = (m.blocks && m.blocks.length) ? m.blocks : [{ type: 'text', text: m.text || '' }];
+    const blocksHtml = blocks.map(b => renderBlock(b, hl)).join('');
+    const ts = m.ts ? `<span class="ts-rel" title="${escapeHtml(fmtDateLong(new Date(m.ts).getTime()/1000))}">${relTime(m.ts)}</span>` : '';
+    html += `<div class="msg ${m.role}" data-idx="${i}">
+      ${blocksHtml}
+      ${ts}
+    </div>`;
+  });
+  $body.innerHTML = html || '<div class="empty-detail"><div class="tip">这个会话没有可读消息</div></div>';
+  if (hl) updateFindNav();
+}
+
+/* 附件 */
+function fileIcon(path) {
+  const lower = path.toLowerCase();
+  const ext = lower.split('.').pop();
+  if (path.endsWith('/')) return { cls: 'ico-folder', ico: '📁' };
+  if (['pdf'].includes(ext)) return { cls: 'ico-pdf', ico: 'PDF' };
+  if (['png','jpg','jpeg','gif','webp','svg','heic','bmp','tiff'].includes(ext)) return { cls: 'ico-img', ico: 'IMG' };
+  if (['md','txt','rtf','doc','docx','rst'].includes(ext)) return { cls: 'ico-doc', ico: 'DOC' };
+  if (['js','ts','tsx','jsx','vue','py','sh','rb','go','rs','c','h','cpp','java','swift','kt','php','html','css','json','yaml','yml','toml','xml','sql'].includes(ext)) return { cls: 'ico-code', ico: '<>' };
+  if (['xlsx','xls','csv','tsv','numbers'].includes(ext)) return { cls: 'ico-data', ico: 'XLS' };
+  if (['mp4','mov','avi','mkv','webm'].includes(ext)) return { cls: 'ico-video', ico: 'MOV' };
+  if (['mp3','wav','m4a','aac','flac','ogg'].includes(ext)) return { cls: 'ico-audio', ico: '♪' };
+  return { cls: 'ico-other', ico: '?' };
+}
+
+function fileName(path) {
+  const cleaned = path.replace(/\/$/, '');
+  return cleaned.split('/').pop() || cleaned;
+}
+
+function renderAttachments() {
+  if (!CURRENT_ATTS.length) {
+    $attPanel.innerHTML = `<div class="head">附件 · 0</div><div class="empty">本会话没有引用任何文件</div>`;
+    return;
+  }
+  let html = `<div class="head">附件 · ${CURRENT_ATTS.length}</div>`;
+  for (const a of CURRENT_ATTS) {
+    const { cls, ico } = fileIcon(a.path);
+    const name = fileName(a.path);
+    html += `<div class="att" data-path="${escapeHtml(a.path)}" data-msg="${a.msgs[0]}">
+      <div class="row1">
+        <div class="ico ${cls}">${ico}</div>
+        <div class="name" title="${escapeHtml(a.path)}">${escapeHtml(name)}</div>
+      </div>
+      <div class="path">${escapeHtml(a.path)}</div>
+      <div class="actions">
+        <button class="go" data-act="goto">跳到对话</button>
+        <button data-act="reveal">在 Finder 中显示</button>
+        <button data-act="open">打开</button>
+      </div>
+    </div>`;
+  }
+  $attPanel.innerHTML = html;
+
+  $attPanel.querySelectorAll('.att').forEach(el => {
+    el.addEventListener('click', e => {
+      const act = e.target.dataset?.act;
+      const path = el.dataset.path;
+      const msgIdx = parseInt(el.dataset.msg, 10);
+      if (act === 'reveal') openInOS(path, 'reveal', el);
+      else if (act === 'open') openInOS(path, 'file', el);
+      else jumpToMsg(msgIdx);
+    });
+  });
+}
+
+async function openInOS(path, mode, el) {
+  try {
+    const r = await fetch(`/api/open?path=${encodeURIComponent(path)}&mode=${mode}`);
+    const j = await r.json();
+    if (j.error) {
+      el.classList.add('gone');
+      const tag = el.querySelector('.miss-tag');
+      if (!tag) {
+        const t = document.createElement('span');
+        t.className = 'miss-tag';
+        t.textContent = '文件已不存在';
+        el.querySelector('.row1').appendChild(t);
+      }
+    }
+  } catch (e) { console.error(e); }
+}
+
+function jumpToMsg(idx) {
+  const el = $body.querySelector(`.msg[data-idx="${idx}"]`);
+  if (!el) return;
+  el.scrollIntoView({ block: 'center', behavior: 'smooth' });
+  el.classList.add('flash');
+  setTimeout(() => el.classList.remove('flash'), 1200);
+}
+
+function applyAttPanel() {
+  if (CURRENT_ATTS.length && SHOW_ATT) {
+    $detail.classList.add('show-att');
+    $attToggle.classList.add('active');
+  } else {
+    $detail.classList.remove('show-att');
+    $attToggle.classList.remove('active');
+  }
+}
+
+$attToggle.addEventListener('click', () => {
+  SHOW_ATT = !SHOW_ATT;
+  localStorage.setItem('cc-show-att', SHOW_ATT ? '1' : '0');
+  applyAttPanel();
+});
+
+function safeFilename(s, maxlen) {
+  // 严格 ASCII safe:仅保留拉丁字母/数字/CJK 中文/连字符;其他(含全角逗号、引号等)全转 -
+  s = String(s || '').replace(/[\u3000-\u303F\uFF00-\uFFEF]/g, '-')  // 全角符号区
+                     .replace(/[\\/:*?"<>|,\.()\[\]{}!@#$%^&+=;`~]/g, '-')
+                     .replace(/\s+/g, '-')
+                     .replace(/-+/g, '-')
+                     .replace(/^-|-$/g, '')
+                     .trim();
+  return s.slice(0, maxlen || 40) || 'session';
+}
+
+async function copyContext() {
+  if (!CURRENT) return;
+  const meta = ALL.find(s => s.path === CURRENT) || {};
+  if (!meta.path) { showToast('未选中会话', true); return; }
+
+  const titlePart = safeFilename(meta.title, 30);
+  const sid = (meta.path || '').split('/').pop().replace(/\.jsonl$/, '').slice(0, 8);
+  const filename = `ccpal-${titlePart}-${sid}.md`;
+
+  // 1. 触发浏览器下载
+  const url = `${location.origin}/api/export?path=${encodeURIComponent(meta.path)}&download=1&fn=${encodeURIComponent(filename)}`;
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  a.style.display = 'none';
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(() => document.body.removeChild(a), 100);
+
+  // 2. 复制引导语到剪贴板(给新对话粘贴用)
+  const hint = `这是上一次对话的内容和附件,我已下载为「${filename}」(在 Downloads 文件夹)。\n请读取这个文件了解上下文,然后我会接着提我的需求。`;
+  try {
+    await navigator.clipboard.writeText(hint);
+  } catch (e) {
+    try {
+      const ta = document.createElement('textarea');
+      ta.value = hint;
+      ta.style.position = 'fixed'; ta.style.left = '-9999px';
+      document.body.appendChild(ta); ta.select();
+      document.execCommand('copy'); ta.remove();
+    } catch (err) {}
+  }
+
+  showToast(`已下载 ${filename} · 引导语已复制 — 切到新对话,拖文件进去 + 粘贴即可`);
+}
+
+function showToast(msg, isError) {
+  let t = document.getElementById('cc-toast');
+  if (!t) {
+    t = document.createElement('div');
+    t.id = 'cc-toast';
+    document.body.appendChild(t);
+  }
+  t.innerHTML = (isError ? '<span class="icon" style="color:#fca5a5">✗</span>' : '<span class="icon">✓</span>') + msg;
+  t.classList.add('show');
+  clearTimeout(window._ccToastTimer);
+  window._ccToastTimer = setTimeout(() => t.classList.remove('show'), 5000);
+}
+
+document.getElementById('copy-btn').addEventListener('click', copyContext);
+
+
+
+
+/* find */
+let findIdx = -1;
+function getMarks() { return [...$body.querySelectorAll('mark')]; }
+function updateFindNav() {
+  const marks = getMarks();
+  if (!marks.length) { $findNav.textContent = '0 / 0'; return; }
+  marks.forEach(m => m.classList.remove('current'));
+  if (findIdx >= 0 && findIdx < marks.length) {
+    marks[findIdx].classList.add('current');
+    marks[findIdx].scrollIntoView({ block: 'center', behavior: 'smooth' });
+  }
+  $findNav.textContent = `${findIdx + 1} / ${marks.length}`;
+}
+function findStep(dir) {
+  const marks = getMarks();
+  if (!marks.length) return;
+  findIdx = (findIdx + dir + marks.length) % marks.length;
+  updateFindNav();
+}
+$find.addEventListener('input', () => {
+  if (CURRENT_DATA) { findIdx = $find.value ? 0 : -1; renderDetail(); }
+});
+$find.addEventListener('keydown', e => {
+  if (e.key === 'Enter') { e.preventDefault(); findStep(e.shiftKey ? -1 : 1); }
+  else if (e.key === 'Escape') { $find.value = ''; findIdx = -1; if (CURRENT_DATA) renderDetail(); $find.blur(); }
+});
+$('find-prev').addEventListener('click', () => findStep(-1));
+$('find-next').addEventListener('click', () => findStep(1));
+
+let debounce;
+$q.addEventListener('input', () => {
+  clearTimeout(debounce);
+  debounce = setTimeout(() => { render(); if (CURRENT_DATA) renderDetail(); }, 180);
+});
+$sort.addEventListener('change', render);
+
+/* 键盘 */
+document.addEventListener('keydown', e => {
+  if (e.key === '/' && document.activeElement.tagName !== 'INPUT') { e.preventDefault(); $q.focus(); $q.select(); return; }
+  if ((e.metaKey || e.ctrlKey) && e.key === 'f') { if (CURRENT_DATA) { e.preventDefault(); $find.focus(); $find.select(); } return; }
+  if (e.key === 'Escape' && document.activeElement.tagName === 'INPUT') document.activeElement.blur();
+  if ((e.key === 'ArrowDown' || e.key === 'ArrowUp') && document.activeElement.tagName !== 'INPUT') {
+    e.preventDefault();
+    const items = [...$list.querySelectorAll('.item')];
+    if (!items.length) return;
+    const idx = items.findIndex(el => el.dataset.path === CURRENT);
+    const next = e.key === 'ArrowDown' ? Math.min(items.length - 1, idx + 1) : Math.max(0, idx - 1);
+    if (next >= 0) { openSession(items[next].dataset.path); items[next].scrollIntoView({ block: 'nearest' }); }
+  }
+});
+
+/* RESIZER */
+const $resizer = $('resizer');
+let dragging = false;
+$resizer.addEventListener('mousedown', e => {
+  dragging = true;
+  $resizer.classList.add('dragging');
+  document.body.style.cursor = 'col-resize';
+  document.body.style.userSelect = 'none';
+  e.preventDefault();
+});
+document.addEventListener('mousemove', e => {
+  if (!dragging) return;
+  const w = Math.max(240, Math.min(720, e.clientX));
+  document.documentElement.style.setProperty('--sidebar-w', w + 'px');
+});
+document.addEventListener('mouseup', () => {
+  if (!dragging) return;
+  dragging = false;
+  $resizer.classList.remove('dragging');
+  document.body.style.cursor = '';
+  document.body.style.userSelect = '';
+  const w = getComputedStyle(document.documentElement).getPropertyValue('--sidebar-w').trim();
+  localStorage.setItem('cc-sidebar-w', w);
+});
+const savedW = localStorage.getItem('cc-sidebar-w');
+if (savedW) document.documentElement.style.setProperty('--sidebar-w', savedW);
+
+/* ATT RESIZER */
+const $attResizer = $('att-resizer');
+let attDragging = false;
+$attResizer.addEventListener('mousedown', e => {
+  attDragging = true;
+  $attResizer.classList.add('dragging');
+  document.body.style.cursor = 'col-resize';
+  document.body.style.userSelect = 'none';
+  e.preventDefault();
+});
+document.addEventListener('mousemove', e => {
+  if (!attDragging) return;
+  const rect = $detail.getBoundingClientRect();
+  const fromRight = rect.right - e.clientX;
+  const w = Math.max(180, Math.min(560, fromRight));
+  document.documentElement.style.setProperty('--att-w', w + 'px');
+});
+document.addEventListener('mouseup', () => {
+  if (!attDragging) return;
+  attDragging = false;
+  $attResizer.classList.remove('dragging');
+  document.body.style.cursor = '';
+  document.body.style.userSelect = '';
+  const w = getComputedStyle(document.documentElement).getPropertyValue('--att-w').trim();
+  localStorage.setItem('cc-att-w', w);
+});
+const savedAttW = localStorage.getItem('cc-att-w');
+if (savedAttW) document.documentElement.style.setProperty('--att-w', savedAttW);
+
+loadIndex();
+</script>
+</body>
+</html>

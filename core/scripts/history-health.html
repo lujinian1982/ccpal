@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>CCPal · 健康洞察</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+  :root {
+    --bg: #f2f3f5;
+    --panel: #ffffff;
+    --border: #e6e8eb;
+    --text: #1a1d21;
+    --text-2: #5f6873;
+    --text-3: #9aa3ad;
+    --green: #10b981;
+    --green-bg: #ecfdf5;
+    --amber: #f59e0b;
+    --amber-bg: #fffbeb;
+    --red: #ef4444;
+    --red-bg: #fef2f2;
+    --accent: #2563eb;
+    --accent-bg: #eff6ff;
+    --time: #7c3aed;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, "PingFang SC", "Helvetica Neue", "SF Pro Text", sans-serif;
+    background: var(--bg); color: var(--text);
+    -webkit-font-smoothing: antialiased; line-height: 1.65;
+  }
+  .wrap { max-width: 980px; margin: 0 auto; padding: 32px 24px 80px; }
+
+  h1 { font-size: 32px; font-weight: 700; letter-spacing: -0.5px; margin-bottom: 4px; }
+  .h-sub { font-size: 14px; color: var(--text-2); margin-bottom: 24px; max-width: 640px; }
+
+  .card-soft {
+    background: linear-gradient(135deg, #fef3c7 0%, #fff 80%);
+    border-radius: 18px; padding: 22px 26px;
+    margin-bottom: 18px; border: 1px solid #fde68a;
+  }
+  .card-soft .label { font-size: 11px; color: var(--amber); letter-spacing: 1px; text-transform: uppercase; font-weight: 700; margin-bottom: 6px; }
+  .card-soft .msg { font-size: 15.5px; color: #78350f; line-height: 1.75; font-weight: 500; }
+
+  .kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 18px; }
+  .kpi { background: var(--panel); border-radius: 18px; padding: 20px 18px; box-shadow: 0 1px 3px rgba(15,23,42,.04); }
+  .kpi .label { font-size: 11px; color: var(--text-3); letter-spacing: 0.8px; text-transform: uppercase; font-weight: 600; margin-bottom: 8px; }
+  .kpi .value { font-size: 28px; font-weight: 700; letter-spacing: -1px; font-variant-numeric: tabular-nums; line-height: 1.1; }
+  .kpi .sub { font-size: 11.5px; color: var(--text-3); margin-top: 4px; font-variant-numeric: tabular-nums; }
+  .kpi.warn .value { color: var(--amber); }
+  .kpi.danger .value { color: var(--red); }
+
+  .card { background: var(--panel); border-radius: 18px; padding: 22px 26px; margin-bottom: 16px; box-shadow: 0 1px 3px rgba(15,23,42,.04); }
+  .card .head { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 16px; }
+  .card .head h2 { font-size: 14px; font-weight: 700; color: var(--text); }
+  .card .head .meta { font-size: 11px; color: var(--text-3); }
+
+  .legend-row { display: flex; gap: 16px; font-size: 11.5px; color: var(--text-2); margin-bottom: 12px; }
+  .legend-row .swatch { display: inline-block; width: 12px; height: 8px; border-radius: 2px; margin-right: 5px; vertical-align: 1px; }
+  .legend-row .sw-msg { background: var(--accent); }
+  .legend-row .sw-time { background: var(--time); }
+
+  .day-row {
+    display: grid; grid-template-columns: 60px 1fr 1fr;
+    gap: 10px; padding: 10px 0;
+    border-bottom: 1px solid var(--border);
+    align-items: center;
+  }
+  .day-row:last-child { border-bottom: none; }
+  .day-row .date {
+    font-size: 12px; color: var(--text-2);
+    font-variant-numeric: tabular-nums; font-weight: 500;
+  }
+  .day-row .date .day-tag {
+    display: block; font-size: 10px; color: var(--text-3);
+    font-weight: 400; margin-top: 1px;
+  }
+  .bar-cell { position: relative; }
+  .bar-track { background: var(--bg); height: 22px; border-radius: 5px; overflow: hidden; position: relative; }
+  .bar-fill {
+    position: absolute; left: 0; top: 0; height: 100%;
+    border-radius: 5px;
+    transition: width .3s;
+  }
+  .bar-fill.msg { background: var(--accent); }
+  .bar-fill.time { background: var(--time); }
+  .bar-label {
+    position: absolute; right: 8px; top: 50%;
+    transform: translateY(-50%);
+    font-size: 11px; font-weight: 600;
+    color: var(--text); font-variant-numeric: tabular-nums;
+    pointer-events: none;
+  }
+  .bar-label.inside { color: white; }
+
+  .heatmap { display: grid; grid-template-columns: repeat(24, 1fr); gap: 3px; height: 36px; align-items: stretch; }
+  .heatmap .cell { border-radius: 3px; background: var(--bg); cursor: pointer; }
+  .heatmap-labels { display: grid; grid-template-columns: repeat(24, 1fr); gap: 3px; margin-top: 6px; font-size: 9px; color: var(--text-3); text-align: center; font-variant-numeric: tabular-nums; }
+  .legend-night { display: flex; gap: 14px; font-size: 11px; color: var(--text-3); margin-top: 10px; }
+  .legend-night .swatch { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 4px; vertical-align: -1px; }
+
+  .insight { display: grid; grid-template-columns: 28px 1fr; gap: 14px; padding: 12px 0; border-bottom: 1px solid var(--border); align-items: start; }
+  .insight:last-child { border-bottom: none; }
+  .insight .ico { width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; }
+  .insight.warn .ico { background: var(--amber-bg); color: var(--amber); }
+  .insight.ok .ico { background: var(--green-bg); color: var(--green); }
+  .insight.danger .ico { background: var(--red-bg); color: var(--red); }
+  .insight .label { font-size: 14px; color: var(--text); font-weight: 500; }
+  .insight .by { font-size: 12.5px; color: var(--text-2); margin-top: 3px; line-height: 1.6; }
+
+  .loading { text-align: center; padding: 40px; color: var(--text-3); font-size: 13px; }
+
+  @media (max-width: 720px) { .kpis { grid-template-columns: 1fr 1fr; } .day-row { grid-template-columns: 50px 1fr; } .day-row .bar-cell:nth-child(3) { grid-column: 2; } }
+
+  /* === 统一顶栏 === */
+  .page-header{position:sticky;top:0;z-index:100;height:52px;background:rgba(255,255,255,.85);backdrop-filter:blur(14px) saturate(180%);-webkit-backdrop-filter:blur(14px) saturate(180%);border-bottom:1px solid rgba(230,232,235,.7);display:flex;align-items:center;padding:0 20px;gap:14px;margin:-32px -24px 28px}
+  .back-btn{width:34px;height:34px;border-radius:10px;background:var(--panel);border:1px solid var(--border);color:var(--text-2);display:flex;align-items:center;justify-content:center;text-decoration:none;transition:all .18s cubic-bezier(.2,.8,.2,1);flex-shrink:0;box-shadow:0 1px 2px rgba(15,23,42,.04)}
+  .back-btn:hover{color:var(--accent);border-color:#dbeafe;transform:translateY(-1px);box-shadow:0 4px 12px rgba(37,99,235,.18),0 0 0 4px rgba(37,99,235,.06)}
+  .back-btn:active{transform:translateY(0) scale(.96)}
+  .back-btn svg{width:18px;height:18px}
+  .brand{font-size:14px;font-weight:600;letter-spacing:-.2px;color:var(--text);white-space:nowrap;display:flex;align-items:center}
+  .brand .dot{display:inline-block;width:6px;height:6px;background:var(--green,#10b981);border-radius:50%;margin-right:7px}
+  .brand .page-tag{color:var(--text-3);font-weight:400;margin-left:6px}
+  .page-nav{display:flex;gap:2px;margin-left:auto}
+  .page-nav a{text-decoration:none;color:var(--text-2);font-size:13px;padding:6px 12px;border-radius:7px;transition:all .12s;white-space:nowrap;font-family:inherit}
+  .page-nav a:hover{background:var(--bg);color:var(--text)}
+  .page-nav a.active{background:var(--accent-bg);color:var(--accent);font-weight:500;box-shadow:inset 0 0 0 1px rgba(37,99,235,.14)}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <div class="page-header">
+    <a href="/" class="back-btn" title="返回 CCPal 主页"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg></a>
+    <div class="brand"><span class="dot"></span>CCPal<span class="page-tag">· 健康</span></div>
+    <nav class="page-nav"><a href="/stats">统计</a><a href="/health" class="active">健康</a><a href="/budget">套餐</a><a href="/safety">数据安全</a></nav>
+  </div>
+
+  <h1>你今天还好吗?</h1>
+  <p class="h-sub">这页不是评判效率,是帮你看见自己——什么时候在透支,什么时候在恢复。<br><span style="font-size:12px;color:var(--text-3)">ⓘ 工作时长按 10 分钟切段:同段内连续对话累加,间隔超 10 分钟视为休息。</span></p>
+
+  <div id="content"><div class="loading">分析中…</div></div>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+const fmt = n => n == null ? '—' : n.toLocaleString();
+
+function todayLocal() {
+  const d = new Date(), p = n => String(n).padStart(2,'0');
+  return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}`;
+}
+
+function fmtDuration(sec) {
+  if (!sec || sec < 60) return `${Math.round(sec || 0)}s`;
+  const m = Math.round(sec / 60);
+  if (m < 60) return `${m}m`;
+  const h = Math.floor(m / 60);
+  const rm = m % 60;
+  return rm ? `${h}h ${rm}m` : `${h}h`;
+}
+
+function dateLabel(s) {
+  const d = new Date(s + 'T00:00:00');
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const target = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+  const diff = Math.floor((today - target) / 86400000);
+  const dn = ['日','一','二','三','四','五','六'][d.getDay()];
+  const md = `${d.getMonth()+1}/${d.getDate()}`;
+  let tag;
+  if (diff === 0) tag = '今天';
+  else if (diff === 1) tag = '昨天';
+  else tag = '周'+dn;
+  return { md, tag };
+}
+
+async function load() {
+  const r = await fetch('/api/stats?_=' + Date.now());
+  const s = await r.json();
+
+  const todayStr = todayLocal();
+  const all = s.daily.slice();
+  const recent = all.slice(-30);
+  const recentDesc = recent.slice().reverse();
+
+  const totals = s.totals;
+  const todayEntry = all.find(d => d.day === todayStr);
+  const todayMsgs = todayEntry ? todayEntry.msgs : 0;
+  const todayTime = todayEntry ? (todayEntry.work_seconds || 0) : 0;
+  const avgMsgs = recent.length ? Math.round(recent.reduce((a, d) => a + d.msgs, 0) / recent.length) : 0;
+  const avgTime = recent.length ? Math.round(recent.reduce((a, d) => a + (d.work_seconds||0), 0) / recent.length) : 0;
+
+  const nightHours = [0,1,2,3,4,5];
+  const nightTotal = nightHours.reduce((a, h) => a + (s.hourly[h] || 0), 0);
+  const nightPct = totals.msgs ? (nightTotal / totals.msgs * 100) : 0;
+
+  let streak = 0;
+  for (let i = recent.length - 1; i >= 0; i--) {
+    if (recent[i].msgs > 0) streak++; else break;
+  }
+  const heavyDays = recent.filter(d => d.msgs >= avgMsgs * 2 && avgMsgs > 0).length;
+
+  let careMsg;
+  if (todayMsgs > avgMsgs * 1.8 && avgMsgs > 50) {
+    careMsg = `今天对话 ${todayMsgs} 条,工作约 ${fmtDuration(todayTime)},超出日均 ${avgMsgs} 条不少。眼睛和肩颈应该有点累了,起身走 5 分钟。`;
+  } else if (streak >= 14) {
+    careMsg = `连续工作 ${streak} 天了。注意力是有储备的——找一天彻底放下手机,效果可能比硬撑出来的产出更好。`;
+  } else if (nightPct > 15) {
+    careMsg = `约 ${nightPct.toFixed(0)}% 的对话发生在凌晨 0-6 点。深夜效率是借明天的,试试把硬骨头挪到上午。`;
+  } else {
+    careMsg = `节奏看起来还算可控。继续保持——记得喝水,别久坐。`;
+  }
+
+  const todayClass = todayMsgs > avgMsgs * 1.5 ? 'warn' : '';
+  const nightClass = nightPct > 20 ? 'danger' : nightPct > 10 ? 'warn' : 'ok';
+  const streakClass = streak >= 14 ? 'warn' : '';
+
+  const maxMsgs = Math.max(...recent.map(d => d.msgs), 1);
+  const maxTime = Math.max(...recent.map(d => d.work_seconds || 0), 1);
+
+  let html = `
+    <div class="card-soft">
+      <div class="label">温柔提醒</div>
+      <div class="msg">${careMsg}</div>
+    </div>
+
+    <div class="kpis">
+      <div class="kpi ${todayClass}">
+        <div class="label">今日消息</div>
+        <div class="value">${fmt(todayMsgs)}</div>
+        <div class="sub">日均 ${avgMsgs} 条</div>
+      </div>
+      <div class="kpi ${todayClass}">
+        <div class="label">今日工作时长</div>
+        <div class="value" style="color:var(--time)">${fmtDuration(todayTime)}</div>
+        <div class="sub">日均 ${fmtDuration(avgTime)}</div>
+      </div>
+      <div class="kpi ${streakClass}">
+        <div class="label">连续工作</div>
+        <div class="value">${streak} 天</div>
+        <div class="sub">最近 30 天内</div>
+      </div>
+      <div class="kpi ${nightClass}">
+        <div class="label">深夜活跃</div>
+        <div class="value">${nightPct.toFixed(1)}%</div>
+        <div class="sub">凌晨 0-6 点占比</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="head"><h2>每日强度 · 最新在上</h2><span class="meta">最近 30 天</span></div>
+      <div class="legend-row">
+        <span><span class="swatch sw-msg"></span>消息条数</span>
+        <span><span class="swatch sw-time"></span>工作时长(10 分钟切段)</span>
+      </div>
+      <div id="day-rows"></div>
+    </div>
+
+    <div class="card">
+      <div class="head"><h2>24 小时活跃热力</h2><span class="meta">所有历史聚合</span></div>
+      <div class="heatmap" id="heatmap"></div>
+      <div class="heatmap-labels" id="hm-labels"></div>
+      <div class="legend-night">
+        <span><span class="swatch" style="background:#93c5fd"></span>白天 (6-22 时)</span>
+        <span><span class="swatch" style="background:#a78bfa"></span>深夜 (23-5 时)</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="head"><h2>身体提示</h2><span class="meta">基于行为模式</span></div>
+      <div id="insights"></div>
+    </div>
+  `;
+  $('content').innerHTML = html;
+
+  $('day-rows').innerHTML = recentDesc.map(d => {
+    const lbl = dateLabel(d.day);
+    const msgPct = (d.msgs / maxMsgs * 100).toFixed(1);
+    const timePct = ((d.work_seconds || 0) / maxTime * 100).toFixed(1);
+    const msgInside = parseFloat(msgPct) > 30;
+    const timeInside = parseFloat(timePct) > 30;
+    return `<div class="day-row">
+      <div class="date">${lbl.md}<span class="day-tag">${lbl.tag}</span></div>
+      <div class="bar-cell">
+        <div class="bar-track">
+          <div class="bar-fill msg" style="width:${msgPct}%"></div>
+          <div class="bar-label ${msgInside?'inside':''}">${fmt(d.msgs)} 条</div>
+        </div>
+      </div>
+      <div class="bar-cell">
+        <div class="bar-track">
+          <div class="bar-fill time" style="width:${timePct}%"></div>
+          <div class="bar-label ${timeInside?'inside':''}">${fmtDuration(d.work_seconds || 0)}</div>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+
+  const hourly = s.hourly;
+  const maxH = Math.max(...hourly, 1);
+  $('heatmap').innerHTML = hourly.map((v, i) => {
+    const intensity = v / maxH;
+    const isNight = i < 6 || i >= 23;
+    const baseHue = isNight ? '258' : '217';
+    const sat = isNight ? '83%' : '91%';
+    const light = (90 - intensity * 50) + '%';
+    return `<div class="cell" style="background:hsl(${baseHue},${sat},${light})" title="${i}:00 · ${v} 条"></div>`;
+  }).join('');
+  $('hm-labels').innerHTML = Array.from({length:24}, (_, i) => i % 3 === 0 ? `<div>${i}</div>` : '<div></div>').join('');
+
+  const insights = [];
+  if (nightPct > 15) insights.push({ cls: 'warn', label: `深夜对话占比 ${nightPct.toFixed(0)}%`, by: '凌晨工作的代价是第二天的认知透支。试着把硬任务挪到上午。' });
+  if (heavyDays >= 5) insights.push({ cls: 'warn', label: `30 天里有 ${heavyDays} 天高负荷`, by: '不需要每天都拉满。少做一些,但做得清楚,比堆量更可持续。' });
+  if (streak >= 21) insights.push({ cls: 'danger', label: `已连续工作 ${streak} 天`, by: '没有完整的休息日,长期下来恢复力会下降。建议安排一天彻底离线。' });
+  if (todayMsgs === 0) insights.push({ cls: 'ok', label: '今天还没动键盘', by: '休息也是工作的一部分。' });
+  if (insights.length === 0) insights.push({ cls: 'ok', label: '近期节奏看起来比较平稳', by: '继续保持就好。每隔 50 分钟起身一次,眼睛和颈椎会感谢你。' });
+  $('insights').innerHTML = insights.map(it => `<div class="insight ${it.cls}"><div class="ico">${it.cls === 'ok' ? '✓' : '!'}</div><div><div class="label">${it.label}</div><div class="by">${it.by}</div></div></div>`).join('');
+}
+
+load().catch(e => { $('content').innerHTML = `<div class="loading" style="color:#ef4444">加载失败: ${e.message}</div>`; });
+</script>
+</body>
+</html>

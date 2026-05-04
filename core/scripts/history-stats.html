@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>CCPal · 统计</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+  :root {
+    --bg: #f2f3f5;
+    --panel: #ffffff;
+    --border: #e6e8eb;
+    --text: #1a1d21;
+    --text-2: #5f6873;
+    --text-3: #9aa3ad;
+    --accent: #2563eb;
+    --accent-2: #7c3aed;
+    --accent-bg: #eff6ff;
+    --green: #10b981;
+    --amber: #f59e0b;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, "PingFang SC", "Helvetica Neue", "SF Pro Text", sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    -webkit-font-smoothing: antialiased;
+    line-height: 1.6;
+  }
+  .wrap { max-width: 1080px; margin: 0 auto; padding: 32px 24px 80px; }
+
+  h1 {
+    font-size: 32px;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+    margin-bottom: 4px;
+  }
+  .h-sub {
+    font-size: 14px; color: var(--text-2);
+    margin-bottom: 28px;
+  }
+
+  /* KPI grid */
+  .kpis {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+  .kpi {
+    background: var(--panel);
+    border-radius: 18px;
+    padding: 22px 20px;
+    box-shadow: 0 1px 3px rgba(15,23,42,.04);
+    position: relative;
+    overflow: hidden;
+  }
+  .kpi .label {
+    font-size: 11px;
+    color: var(--text-3);
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
+    font-weight: 600;
+    margin-bottom: 10px;
+  }
+  .kpi .value {
+    font-size: 32px;
+    font-weight: 700;
+    color: var(--text);
+    letter-spacing: -1px;
+    font-variant-numeric: tabular-nums;
+    line-height: 1.1;
+  }
+  .kpi .sub {
+    font-size: 12px;
+    color: var(--text-3);
+    margin-top: 4px;
+    font-variant-numeric: tabular-nums;
+  }
+  .kpi .accent { color: var(--accent); }
+  .kpi .green { color: var(--green); }
+  .kpi .amber { color: var(--amber); }
+
+  /* card */
+  .card {
+    background: var(--panel);
+    border-radius: 18px;
+    padding: 24px 26px;
+    margin-bottom: 16px;
+    box-shadow: 0 1px 3px rgba(15,23,42,.04);
+  }
+  .card .head {
+    display: flex; align-items: baseline; justify-content: space-between;
+    margin-bottom: 18px;
+  }
+  .card .head h2 {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--text);
+    letter-spacing: -0.2px;
+  }
+  .card .head .meta {
+    font-size: 11px;
+    color: var(--text-3);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .grid-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+
+  /* 图表容器 */
+  .chart {
+    width: 100%;
+    height: 200px;
+    position: relative;
+  }
+  .chart svg { display: block; width: 100%; height: 100%; }
+  .chart .axis { fill: var(--text-3); font-size: 10px; font-family: ui-monospace,Menlo,monospace; }
+
+  /* legend */
+  .legend {
+    display: flex; gap: 16px;
+    font-size: 12px; color: var(--text-2);
+    margin-top: 8px;
+  }
+  .legend span { display: inline-flex; align-items: center; gap: 6px; }
+  .legend .dot {
+    width: 10px; height: 10px; border-radius: 3px;
+    background: var(--accent);
+  }
+  .legend .dot.out { background: var(--accent-2); }
+  .legend .dot.cache { background: var(--green); }
+
+  /* tooltip */
+  .tip {
+    position: absolute;
+    background: rgba(26,29,33,0.95);
+    color: white;
+    padding: 6px 10px;
+    border-radius: 6px;
+    font-size: 11px;
+    pointer-events: none;
+    transform: translate(-50%, -120%);
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+    display: none;
+    z-index: 10;
+  }
+
+  /* top projects 排行 */
+  .top-list { display: flex; flex-direction: column; gap: 8px; }
+  .top-item {
+    display: grid;
+    grid-template-columns: 1fr 70px;
+    gap: 12px;
+    align-items: center;
+  }
+  .top-item .bar-wrap {
+    position: relative;
+    background: var(--bg);
+    border-radius: 6px;
+    height: 32px;
+    overflow: hidden;
+  }
+  .top-item .bar {
+    position: absolute; left: 0; top: 0; height: 100%;
+    background: linear-gradient(90deg, var(--accent) 0%, var(--accent-2) 100%);
+    border-radius: 6px;
+    opacity: 0.85;
+  }
+  .top-item .label {
+    position: absolute;
+    left: 10px; top: 50%; transform: translateY(-50%);
+    font-size: 12.5px; color: var(--text);
+    font-weight: 500;
+    z-index: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    width: calc(100% - 20px);
+  }
+  .top-item .num {
+    text-align: right;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-2);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .loading { text-align: center; padding: 40px; color: var(--text-3); font-size: 13px; }
+
+  @media (max-width: 720px) {
+    .kpis { grid-template-columns: 1fr 1fr; }
+    .grid-2 { grid-template-columns: 1fr; }
+  }
+
+  /* === 统一顶栏 (page-header) === */
+  .page-header{position:sticky;top:0;z-index:100;height:52px;background:rgba(255,255,255,.85);backdrop-filter:blur(14px) saturate(180%);-webkit-backdrop-filter:blur(14px) saturate(180%);border-bottom:1px solid rgba(230,232,235,.7);display:flex;align-items:center;padding:0 20px;gap:14px;margin:-32px -24px 28px}
+  .back-btn{width:34px;height:34px;border-radius:10px;background:var(--panel);border:1px solid var(--border);color:var(--text-2);display:flex;align-items:center;justify-content:center;text-decoration:none;transition:all .18s cubic-bezier(.2,.8,.2,1);flex-shrink:0;box-shadow:0 1px 2px rgba(15,23,42,.04),0 0 0 0 rgba(37,99,235,0)}
+  .back-btn:hover{color:var(--accent);border-color:#dbeafe;transform:translateY(-1px);box-shadow:0 4px 12px rgba(37,99,235,.18),0 0 0 4px rgba(37,99,235,.06)}
+  .back-btn:active{transform:translateY(0) scale(.96)}
+  .back-btn svg{width:18px;height:18px}
+  .brand{font-size:14px;font-weight:600;letter-spacing:-.2px;color:var(--text);white-space:nowrap;display:flex;align-items:center}
+  .brand .dot{display:inline-block;width:6px;height:6px;background:var(--green,#10b981);border-radius:50%;margin-right:7px}
+  .brand .page-tag{color:var(--text-3);font-weight:400;margin-left:6px}
+  .page-nav{display:flex;gap:2px;margin-left:auto}
+  .page-nav a{text-decoration:none;color:var(--text-2);font-size:13px;padding:6px 12px;border-radius:7px;transition:all .12s;white-space:nowrap;font-family:inherit}
+  .page-nav a:hover{background:var(--bg);color:var(--text)}
+  .page-nav a.active{background:var(--accent-bg);color:var(--accent);font-weight:500;box-shadow:inset 0 0 0 1px rgba(37,99,235,.14)}
+
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <div class="page-header">
+    <a href="/" class="back-btn" title="返回 CCPal 主页"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg></a>
+    <div class="brand"><span class="dot"></span>CCPal<span class="page-tag">· 统计</span></div>
+    <nav class="page-nav"><a href="/stats" class="active">统计</a><a href="/health">健康</a><a href="/budget">套餐</a><a href="/safety">数据安全</a></nav>
+  </div>
+
+  <h1>使用统计</h1>
+  <p class="h-sub">所有数据来自本机 <code style="background:#f3f4f6;padding:1px 5px;border-radius:3px;font-family:ui-monospace,Menlo,monospace;font-size:12px">~/.claude/projects/</code>,不上传任何外部服务。</p>
+
+  <div id="content"><div class="loading">读取统计中…</div></div>
+</div>
+
+<div class="tip" id="tip"></div>
+
+<script>
+const $ = id => document.getElementById(id);
+const fmt = n => n == null ? '—' : n.toLocaleString();
+const fmtK = n => {
+  if (n == null) return '—';
+  if (n < 1000) return String(n);
+  if (n < 1e6) return (n/1000).toFixed(1) + 'K';
+  if (n < 1e9) return (n/1e6).toFixed(1) + 'M';
+  return (n/1e9).toFixed(2) + 'B';
+};
+
+function shortProj(cwd) {
+  if (!cwd || cwd === '(未记录)') return cwd || '(未记录)';
+  return cwd.split('/').filter(Boolean).slice(-2).join('/');
+}
+
+/* ========== 图表 ========== */
+
+function drawAreaChart(svg, data, key, accent = '#2563eb') {
+  if (!data.length) return;
+  const W = 600, H = 200, P = { l: 36, r: 8, t: 14, b: 22 };
+  svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+  svg.setAttribute('preserveAspectRatio', 'none');
+  svg.innerHTML = '';
+
+  const xs = data.map((_, i) => P.l + (i / Math.max(1, data.length - 1)) * (W - P.l - P.r));
+  const ys = data.map(d => d[key] || 0);
+  const yMax = Math.max(...ys, 1);
+  const yScale = v => H - P.b - (v / yMax) * (H - P.t - P.b);
+
+  // grid lines + y labels
+  const NS = 'http://www.w3.org/2000/svg';
+  const gridLines = 3;
+  for (let i = 0; i <= gridLines; i++) {
+    const y = P.t + (i / gridLines) * (H - P.t - P.b);
+    const v = Math.round(yMax * (1 - i / gridLines));
+    const line = document.createElementNS(NS, 'line');
+    line.setAttribute('x1', P.l); line.setAttribute('x2', W - P.r);
+    line.setAttribute('y1', y); line.setAttribute('y2', y);
+    line.setAttribute('stroke', '#f0f2f4'); line.setAttribute('stroke-width', '1');
+    svg.appendChild(line);
+    const lab = document.createElementNS(NS, 'text');
+    lab.setAttribute('x', P.l - 6); lab.setAttribute('y', y + 3);
+    lab.setAttribute('text-anchor', 'end');
+    lab.setAttribute('class', 'axis');
+    lab.textContent = fmtK(v);
+    svg.appendChild(lab);
+  }
+
+  // x labels (sparse)
+  const tickStep = Math.max(1, Math.floor(data.length / 6));
+  data.forEach((d, i) => {
+    if (i % tickStep !== 0 && i !== data.length - 1) return;
+    const lab = document.createElementNS(NS, 'text');
+    lab.setAttribute('x', xs[i]); lab.setAttribute('y', H - 6);
+    lab.setAttribute('text-anchor', 'middle');
+    lab.setAttribute('class', 'axis');
+    lab.textContent = d.day.slice(5);
+    svg.appendChild(lab);
+  });
+
+  // area
+  const linePts = xs.map((x, i) => `${x},${yScale(ys[i])}`);
+  const area = document.createElementNS(NS, 'path');
+  const areaPath = `M${P.l},${H - P.b} L${linePts.join(' L')} L${W - P.r},${H - P.b} Z`;
+  area.setAttribute('d', areaPath);
+  area.setAttribute('fill', `url(#grad-${key})`);
+  svg.appendChild(area);
+
+  // gradient
+  const defs = document.createElementNS(NS, 'defs');
+  defs.innerHTML = `<linearGradient id="grad-${key}" x1="0" x2="0" y1="0" y2="1">
+    <stop offset="0%" stop-color="${accent}" stop-opacity="0.3"/>
+    <stop offset="100%" stop-color="${accent}" stop-opacity="0"/>
+  </linearGradient>`;
+  svg.appendChild(defs);
+
+  // line
+  const line = document.createElementNS(NS, 'path');
+  line.setAttribute('d', `M${linePts.join(' L')}`);
+  line.setAttribute('fill', 'none');
+  line.setAttribute('stroke', accent);
+  line.setAttribute('stroke-width', '1.5');
+  line.setAttribute('stroke-linejoin', 'round');
+  svg.appendChild(line);
+
+  // hover dots
+  data.forEach((d, i) => {
+    const dot = document.createElementNS(NS, 'circle');
+    dot.setAttribute('cx', xs[i]); dot.setAttribute('cy', yScale(ys[i]));
+    dot.setAttribute('r', '8');
+    dot.setAttribute('fill', 'transparent');
+    dot.style.cursor = 'pointer';
+    dot.addEventListener('mouseenter', e => {
+      const t = $('tip');
+      const rect = svg.getBoundingClientRect();
+      t.style.left = (rect.left + xs[i] / W * rect.width) + 'px';
+      t.style.top = (rect.top + yScale(ys[i]) / H * rect.height) + 'px';
+      t.textContent = `${d.day} · ${fmt(ys[i])}`;
+      t.style.display = 'block';
+    });
+    dot.addEventListener('mouseleave', () => { $('tip').style.display = 'none'; });
+    svg.appendChild(dot);
+  });
+}
+
+function drawHourBars(svg, hourly) {
+  const W = 600, H = 200, P = { l: 24, r: 8, t: 14, b: 22 };
+  svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+  svg.setAttribute('preserveAspectRatio', 'none');
+  svg.innerHTML = '';
+  const NS = 'http://www.w3.org/2000/svg';
+  const max = Math.max(...hourly, 1);
+  const bw = (W - P.l - P.r) / 24;
+
+  hourly.forEach((v, i) => {
+    const h = (v / max) * (H - P.t - P.b);
+    const x = P.l + i * bw;
+    const y = H - P.b - h;
+    const bar = document.createElementNS(NS, 'rect');
+    bar.setAttribute('x', x + bw * 0.15);
+    bar.setAttribute('y', y);
+    bar.setAttribute('width', bw * 0.7);
+    bar.setAttribute('height', h);
+    bar.setAttribute('rx', '2');
+    bar.setAttribute('fill', i >= 8 && i <= 22 ? '#2563eb' : '#7c3aed');
+    bar.setAttribute('opacity', '0.85');
+    bar.style.cursor = 'pointer';
+    bar.addEventListener('mouseenter', e => {
+      const t = $('tip');
+      const rect = svg.getBoundingClientRect();
+      t.style.left = (rect.left + (x + bw / 2) / W * rect.width) + 'px';
+      t.style.top = (rect.top + y / H * rect.height) + 'px';
+      t.textContent = `${i.toString().padStart(2,'0')}:00 · ${fmt(v)} 条消息`;
+      t.style.display = 'block';
+    });
+    bar.addEventListener('mouseleave', () => { $('tip').style.display = 'none'; });
+    svg.appendChild(bar);
+
+    if (i % 3 === 0) {
+      const lab = document.createElementNS(NS, 'text');
+      lab.setAttribute('x', x + bw / 2); lab.setAttribute('y', H - 6);
+      lab.setAttribute('text-anchor', 'middle');
+      lab.setAttribute('class', 'axis');
+      lab.textContent = i;
+      svg.appendChild(lab);
+    }
+  });
+}
+
+/* ========== 渲染 ========== */
+async function load() {
+  const r = await fetch('/api/stats?_=' + Date.now());
+  const s = await r.json();
+  const t = s.totals;
+
+  $('generated').textContent = '更新于 ' + new Date(s.generated_at * 1000).toLocaleString('zh-CN', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+
+  // 取最近 30 天
+  const recent = s.daily.slice(-60);
+
+  const html = `
+    <div class="kpis">
+      <div class="kpi">
+        <div class="label">会话总数</div>
+        <div class="value accent">${fmt(t.sessions)}</div>
+        <div class="sub">活跃 ${s.active_days} 天</div>
+      </div>
+      <div class="kpi">
+        <div class="label">消息总数</div>
+        <div class="value">${fmtK(t.msgs)}</div>
+        <div class="sub">平均 ${(t.msgs / Math.max(1, t.sessions)).toFixed(1)} 条/会话</div>
+      </div>
+      <div class="kpi">
+        <div class="label">输出 Token</div>
+        <div class="value green">${fmtK(t.out)}</div>
+        <div class="sub">输入 ${fmtK(t.in)}</div>
+      </div>
+      <div class="kpi">
+        <div class="label">缓存命中</div>
+        <div class="value amber">${fmtK(t.cache_read)}</div>
+        <div class="sub">节省的 token 量</div>
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <div class="card">
+        <div class="head">
+          <h2>每日会话</h2>
+          <span class="meta">最近 ${recent.length} 天</span>
+        </div>
+        <div class="chart"><svg id="chart-sessions"></svg></div>
+      </div>
+      <div class="card">
+        <div class="head">
+          <h2>每日 Token 输出</h2>
+          <span class="meta">最近 ${recent.length} 天</span>
+        </div>
+        <div class="chart"><svg id="chart-tokens"></svg></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="head">
+        <h2>24 小时活跃分布</h2>
+        <span class="meta">所有消息按发送小时聚合 · 蓝=工作时段 紫=深夜/清晨</span>
+      </div>
+      <div class="chart"><svg id="chart-hour"></svg></div>
+    </div>
+
+    <div class="card">
+      <div class="head">
+        <h2>项目排行</h2>
+        <span class="meta">按消息数 · Top 10</span>
+      </div>
+      <div class="top-list">
+        ${s.projects.slice(0, 10).map(p => {
+          const pct = (p.msgs / s.projects[0].msgs * 100).toFixed(1);
+          return `<div class="top-item">
+            <div class="bar-wrap">
+              <div class="bar" style="width:${pct}%"></div>
+              <div class="label">${shortProj(p.cwd)}</div>
+            </div>
+            <div class="num">${fmt(p.msgs)}</div>
+          </div>`;
+        }).join('')}
+      </div>
+    </div>
+  `;
+  $('content').innerHTML = html;
+
+  drawAreaChart($('chart-sessions'), recent, 'sessions', '#2563eb');
+  drawAreaChart($('chart-tokens'), recent, 'out', '#7c3aed');
+
+  // 24 小时
+  drawHourBars($('chart-hour'), s.hourly);
+}
+
+load().catch(e => {
+  $('content').innerHTML = `<div class="loading" style="color:#ef4444">加载失败: ${e.message}</div>`;
+});
+</script>
+</body>
+</html>

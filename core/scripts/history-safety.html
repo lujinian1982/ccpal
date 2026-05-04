@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>CCPal · 数据安全</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+  :root {
+    --bg: #f2f3f5;
+    --panel: #ffffff;
+    --border: #e6e8eb;
+    --text: #1a1d21;
+    --text-2: #5f6873;
+    --text-3: #9aa3ad;
+    --accent: #2563eb;
+    --accent-bg: #eff6ff;
+    --green: #10b981;
+    --green-bg: #ecfdf5;
+    --amber: #f59e0b;
+    --amber-bg: #fffbeb;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, "PingFang SC", "Helvetica Neue", "SF Pro Text", sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    -webkit-font-smoothing: antialiased;
+    line-height: 1.6;
+  }
+  .wrap { max-width: 880px; margin: 0 auto; padding: 32px 24px 80px; }
+
+  /* nav */
+
+  h1 {
+    font-size: 32px;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+    margin-bottom: 8px;
+  }
+  .lead {
+    font-size: 15px;
+    color: var(--text-2);
+    margin-bottom: 32px;
+    max-width: 640px;
+  }
+
+  /* card */
+  .card {
+    background: var(--panel);
+    border-radius: 18px;
+    padding: 24px 28px;
+    margin-bottom: 16px;
+    box-shadow: 0 1px 3px rgba(15,23,42,.04);
+  }
+  .card h2 {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--text-3);
+    letter-spacing: 1.2px;
+    text-transform: uppercase;
+    margin-bottom: 14px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .card h2 .num {
+    background: var(--accent-bg);
+    color: var(--accent);
+    width: 22px; height: 22px;
+    border-radius: 50%;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: 11px;
+  }
+
+  /* 路径表 */
+  .path-row {
+    display: grid;
+    grid-template-columns: 1fr 90px;
+    gap: 12px;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--border);
+    align-items: center;
+  }
+  .path-row:last-child { border-bottom: none; }
+  .path-row .info .name {
+    font-size: 14px; font-weight: 600;
+    color: var(--text);
+  }
+  .path-row .info .path {
+    font-family: ui-monospace, Menlo, monospace;
+    font-size: 12px;
+    color: var(--text-2);
+    margin-top: 2px;
+    word-break: break-all;
+  }
+  .path-row .info .desc {
+    font-size: 12px;
+    color: var(--text-3);
+    margin-top: 4px;
+  }
+  .path-row .badge {
+    text-align: center;
+    padding: 5px 10px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 600;
+    background: var(--green-bg);
+    color: var(--green);
+  }
+  .path-row .badge.live { background: var(--green-bg); color: var(--green); }
+  .path-row .badge.snap { background: var(--accent-bg); color: var(--accent); }
+  .path-row .badge.mirror { background: #fef3c7; color: #b45309; }
+
+  /* 风险表 */
+  .risk {
+    display: grid;
+    grid-template-columns: 28px 1fr auto;
+    gap: 14px;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--border);
+    align-items: start;
+  }
+  .risk:last-child { border-bottom: none; }
+  .risk .ico {
+    width: 24px; height: 24px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px;
+    font-weight: 700;
+  }
+  .risk.ok .ico { background: var(--green-bg); color: var(--green); }
+  .risk.warn .ico { background: var(--amber-bg); color: var(--amber); }
+  .risk .label { font-size: 14px; color: var(--text); font-weight: 500; }
+  .risk .by {
+    font-size: 12px;
+    color: var(--text-3);
+    margin-top: 2px;
+  }
+  .risk .status {
+    font-size: 12px;
+    color: var(--green);
+    font-weight: 600;
+    align-self: center;
+  }
+  .risk.warn .status { color: var(--amber); }
+
+  /* 链路图 */
+  .flow {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    margin-top: 8px;
+  }
+  .flow .stage {
+    background: var(--bg);
+    border-radius: 12px;
+    padding: 16px 14px;
+    text-align: center;
+    position: relative;
+  }
+  .flow .stage .step-label {
+    font-size: 10px;
+    color: var(--text-3);
+    letter-spacing: 1px;
+    margin-bottom: 8px;
+  }
+  .flow .stage .stage-name {
+    font-size: 14px; font-weight: 600; color: var(--text);
+    margin-bottom: 4px;
+  }
+  .flow .stage .stage-when {
+    font-size: 11px;
+    color: var(--text-2);
+  }
+  .flow .stage:not(:last-child)::after {
+    content: "→";
+    position: absolute;
+    right: -10px; top: 50%;
+    transform: translateY(-50%);
+    color: var(--text-3);
+    font-size: 14px;
+    z-index: 1;
+  }
+
+  /* 命令 */
+  .cmd {
+    background: #1a1d21;
+    color: #e6e8eb;
+    border-radius: 10px;
+    padding: 14px 18px;
+    font-family: ui-monospace, Menlo, monospace;
+    font-size: 12.5px;
+    line-height: 1.7;
+    overflow-x: auto;
+    margin-top: 8px;
+  }
+  .cmd .c { color: #9aa3ad; }
+  .cmd .k { color: #93c5fd; }
+  .cmd .s { color: #fbbf24; }
+
+  .tldr {
+    background: linear-gradient(135deg, #1a1d21 0%, #2a2f36 100%);
+    color: #f9fafb;
+    border-radius: 18px;
+    padding: 24px 28px;
+    margin-top: 8px;
+  }
+  .tldr .label {
+    font-size: 11px; letter-spacing: 1.5px;
+    color: #9aa3ad; margin-bottom: 10px;
+  }
+  .tldr p { font-size: 15px; line-height: 1.75; }
+  .tldr b { color: #93c5fd; font-weight: 600; }
+
+  /* === 统一顶栏 (page-header) === */
+  .page-header{position:sticky;top:0;z-index:100;height:52px;background:rgba(255,255,255,.85);backdrop-filter:blur(14px) saturate(180%);-webkit-backdrop-filter:blur(14px) saturate(180%);border-bottom:1px solid rgba(230,232,235,.7);display:flex;align-items:center;padding:0 20px;gap:14px;margin:-32px -24px 28px}
+  .back-btn{width:34px;height:34px;border-radius:10px;background:var(--panel);border:1px solid var(--border);color:var(--text-2);display:flex;align-items:center;justify-content:center;text-decoration:none;transition:all .18s cubic-bezier(.2,.8,.2,1);flex-shrink:0;box-shadow:0 1px 2px rgba(15,23,42,.04),0 0 0 0 rgba(37,99,235,0)}
+  .back-btn:hover{color:var(--accent);border-color:#dbeafe;transform:translateY(-1px);box-shadow:0 4px 12px rgba(37,99,235,.18),0 0 0 4px rgba(37,99,235,.06)}
+  .back-btn:active{transform:translateY(0) scale(.96)}
+  .back-btn svg{width:18px;height:18px}
+  .brand{font-size:14px;font-weight:600;letter-spacing:-.2px;color:var(--text);white-space:nowrap;display:flex;align-items:center}
+  .brand .dot{display:inline-block;width:6px;height:6px;background:var(--green,#10b981);border-radius:50%;margin-right:7px}
+  .brand .page-tag{color:var(--text-3);font-weight:400;margin-left:6px}
+  .page-nav{display:flex;gap:2px;margin-left:auto}
+  .page-nav a{text-decoration:none;color:var(--text-2);font-size:13px;padding:6px 12px;border-radius:7px;transition:all .12s;white-space:nowrap;font-family:inherit}
+  .page-nav a:hover{background:var(--bg);color:var(--text)}
+  .page-nav a.active{background:var(--accent-bg);color:var(--accent);font-weight:500;box-shadow:inset 0 0 0 1px rgba(37,99,235,.14)}
+
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="page-header">
+    <a href="/" class="back-btn" title="返回 CCPal 主页"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg></a>
+    <div class="brand"><span class="dot"></span>CCPal<span class="page-tag">· 数据安全</span></div>
+    <nav class="page-nav"><a href="/stats">统计</a><a href="/health">健康</a><a href="/budget">套餐</a><a href="/safety" class="active">数据安全</a></nav>
+  </div>
+
+  <h1>你的对话,永远找得到。</h1>
+  <p class="lead">本页解释你所有 Claude Code 对话目前存放在哪里、谁可能动它、CCPal 如何保证它不被悄悄删除,以及怎么把它随时复制走。</p>
+
+  <!-- 1. 数据在哪 -->
+  <div class="card">
+    <h2><span class="num">1</span>你的数据存在哪里</h2>
+
+    <div class="path-row">
+      <div class="info">
+        <div class="name">活动目录(主存储)</div>
+        <div class="path">~/.claude/projects/</div>
+        <div class="desc">所有项目的对话原文(jsonl)+ auto-memory + 子 agent 子目录,Claude Code 边用边写。</div>
+      </div>
+      <div class="badge live">活动</div>
+    </div>
+
+    <div class="path-row">
+      <div class="info">
+        <div class="name">每日 Git 快照</div>
+        <div class="path">~/.claude/projects/.git/</div>
+        <div class="desc">launchd 每天 03:00 给整个目录 commit 一次,版本历史可回溯到任意一天。</div>
+      </div>
+      <div class="badge snap">本地快照</div>
+    </div>
+
+    <div class="path-row">
+      <div class="info">
+        <div class="name">独立镜像备份(本次新增)</div>
+        <div class="path">~/CCPal-Backup/transcripts/ + git-mirror/</div>
+        <div class="desc">完全脱离 ~/.claude 的独立副本。即使整个 ~/.claude 被清掉、卸载、误删,这里还在。每天 03:30 增量同步,只传变化的部分,绝不删除目标里的旧文件。</div>
+      </div>
+      <div class="badge mirror">独立镜像</div>
+    </div>
+  </div>
+
+  <!-- 2. worktree 解释 -->
+  <div class="card">
+    <h2><span class="num">2</span>不同工作方式的路径,统一在一起</h2>
+    <p style="font-size:14px;color:var(--text-2);margin-bottom:14px;">
+      Claude Code 的对话不管是在<b>普通项目目录</b>里跑、还是在 <b>git worktree</b> 里跑,jsonl 文件都集中写到 <code style="background:#f3f4f6;padding:1px 5px;border-radius:3px;font-family:ui-monospace,Menlo,monospace;font-size:12px">~/.claude/projects/</code> 下,**不会写到 worktree 目录里**。
+    </p>
+    <p style="font-size:14px;color:var(--text-2);margin-bottom:14px;">
+      所以即使你删除某个 worktree,聊天记录也不会丢。CCPal 主页上,worktree 会自动归到它所属的真实项目下,只在条目右侧打一个 <span style="background:rgba(245,158,11,.12);color:#f59e0b;border-radius:4px;padding:0 6px;font-size:11px;font-weight:600">worktree</span> 小标签。
+    </p>
+  </div>
+
+  <!-- 3. 三层链路 -->
+  <div class="card">
+    <h2><span class="num">3</span>三层备份链路</h2>
+    <div class="flow">
+      <div class="stage">
+        <div class="step-label">实时</div>
+        <div class="stage-name">主存储</div>
+        <div class="stage-when">每条消息立刻落盘</div>
+      </div>
+      <div class="stage">
+        <div class="step-label">每天 03:00</div>
+        <div class="stage-name">Git 快照</div>
+        <div class="stage-when">同盘同目录,可回溯</div>
+      </div>
+      <div class="stage">
+        <div class="step-label">每天 03:30</div>
+        <div class="stage-name">独立镜像</div>
+        <div class="stage-when">脱离 ~/.claude</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 4. 风险审计 -->
+  <div class="card">
+    <h2><span class="num">4</span>风险审计 · 已规避项</h2>
+
+    <div class="risk ok">
+      <div class="ico">✓</div>
+      <div>
+        <div class="label">Claude Code 自动清理 transcripts</div>
+        <div class="by">默认 30 天清理,已通过 settings.json 改为永久(cleanupPeriodDays = 9007199254740991)</div>
+      </div>
+      <div class="status">已规避</div>
+    </div>
+
+    <div class="risk ok">
+      <div class="ico">✓</div>
+      <div>
+        <div class="label">Compaction 影响磁盘原文</div>
+        <div class="by">Compaction 只压缩"给 LLM 的上下文",不动磁盘上的 jsonl 原文。原文永远完整。</div>
+      </div>
+      <div class="status">不影响</div>
+    </div>
+
+    <div class="risk ok">
+      <div class="ico">✓</div>
+      <div>
+        <div class="label">删除 worktree 带走聊天记录</div>
+        <div class="by">jsonl 写到 ~/.claude/projects/,不在 worktree 内,删 worktree 不影响</div>
+      </div>
+      <div class="status">不影响</div>
+    </div>
+
+    <div class="risk ok">
+      <div class="ico">✓</div>
+      <div>
+        <div class="label">误删/卸载 ~/.claude</div>
+        <div class="by">~/CCPal-Backup/ 是完全独立的目录,源被清也保留全部历史</div>
+      </div>
+      <div class="status">已规避</div>
+    </div>
+
+    <div class="risk warn">
+      <div class="ico">!</div>
+      <div>
+        <div class="label">磁盘整体故障</div>
+        <div class="by">所有副本都在同一块磁盘上。如果你需要异地备份,可把 ~/CCPal-Backup/ 软链/同步到 NAS、iCloud Drive、或外置硬盘</div>
+      </div>
+      <div class="status">建议外置</div>
+    </div>
+  </div>
+
+  <!-- 5. 怎么复制走 -->
+  <div class="card">
+    <h2><span class="num">5</span>怎么随时把数据复制走</h2>
+    <p style="font-size:14px;color:var(--text-2);margin-bottom:6px;">所有数据都是普通文件,任何拷贝工具都能搬走:</p>
+
+    <div class="cmd"><span class="c"># 1) Finder 直接拖</span><br>open <span class="s">~/CCPal-Backup</span><br><br><span class="c"># 2) 命令行拷贝到外置硬盘 / iCloud / NAS</span><br>cp -R <span class="s">~/CCPal-Backup</span> <span class="s">/Volumes/MyDrive/</span><br><br><span class="c"># 3) 从 git mirror 还原任意一天的版本</span><br>git clone <span class="s">~/CCPal-Backup/git-mirror</span> <span class="s">~/restore-test</span><br>cd ~/restore-test &amp;&amp; git log --oneline | head</div>
+  </div>
+
+  <div class="tldr">
+    <div class="label">TL;DR</div>
+    <p>聊天原文集中在 <b>~/.claude/projects/</b>,不会被 Compaction 删,不会被 worktree 删除带走,自动清理已永久关闭。每天 03:00 git 打快照、03:30 镜像到 <b>~/CCPal-Backup/</b>(完全独立路径),后者就算 ~/.claude 整个被清掉也还在,可随时复制到任何地方。</p>
+  </div>
+
+</div>
+</body>
+</html>
