@@ -43,11 +43,28 @@ CCPal 把 Claude Code 的本地对话（`~/.claude/projects/*.jsonl`）做成可
 
 | Phase | 内容 | 状态 |
 |---|---|---|
-| 1a | 拆出 `core/` + `hosts/` 骨架 + git init | ✅ 当前 |
-| 1b | Claude Code plugin（`.claude-plugin/` + `/ccpal` 命令 + Stop hook） | ⏳ |
-| 1c | `install.sh`（替代 HTML 安装器，curl 一行装） | ⏳ |
+| 1a | 拆出 `core/` + `hosts/` 骨架 + git init | ✅ |
+| 1b | Claude Code plugin（`.claude-plugin/` + `/ccpal` 命令 + Stop hook + bootstrap install.sh） | ✅ 当前 |
+| 1c | 把 `core/` bundle 进 plugin（解除 git-subdir 对父目录依赖） + 推 GitHub | ⏳ |
 | 2  | Codex MCP server（`open_ui` / `search` / `stats` tools） | ⏳ |
 | 3  | OpenCode plugin（slash 命令 + 共享 MCP） | ⏳ |
+
+### Claude Code plugin 用法（开发中）
+
+```bash
+# 在本地仓库根目录把这个 marketplace 加进 Claude Code
+/plugin marketplace add /Users/lujinian/Documents/workspace/claudcode/mem/hosts/claude-code
+
+# 装上
+/plugin install ccpal@ccpal-marketplace
+
+# 用
+/ccpal install      # 首次：把 core/ 部署到 ~/.claude/scripts/ + 加载 launchd
+/ccpal              # 默认：打开 http://127.0.0.1:8765
+/ccpal search 关键词
+/ccpal doctor
+/ccpal status
+```
 
 ---
 

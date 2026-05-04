@@ -1,0 +1,16 @@
+{
+  "name": "ccpal-marketplace",
+  "owner": {
+    "name": "lujinian"
+  },
+  "plugins": [
+    {
+      "name": "ccpal",
+      "source": "git-subdir",
+      "url": "https://github.com/REPLACE_ME/ccpal.git",
+      "path": "hosts/claude-code/",
+      "ref": "main",
+      "description": "Claude Code conversation history browser & backup (macOS)"
+    }
+  ]
+}

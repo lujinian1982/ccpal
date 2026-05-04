@@ -1,0 +1,14 @@
+{
+  "hooks": {
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "[ -x \"$HOME/.claude/scripts/daily-snapshot.sh\" ] && bash \"$HOME/.claude/scripts/daily-snapshot.sh\" >/dev/null 2>&1 &"
+          }
+        ]
+      }
+    ]
+  }
+}

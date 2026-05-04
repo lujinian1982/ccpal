@@ -1,0 +1,10 @@
+{
+  "name": "ccpal",
+  "version": "0.1.0",
+  "description": "Browse, search, and back up your Claude Code conversation history. Local-first, macOS-only.",
+  "author": {
+    "name": "lujinian"
+  },
+  "keywords": ["history", "backup", "search", "macos", "launchd"],
+  "license": "MIT"
+}
