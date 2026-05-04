@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "ccpal": {
+      "command": "./run-ccpal.sh",
+      "args": [],
+      "cwd": "."
+    }
+  }
+}
