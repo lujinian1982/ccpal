@@ -52,8 +52,8 @@ CCPal 把 Claude Code 的本地对话（`~/.claude/projects/*.jsonl`）做成可
 ### Claude Code plugin 用法（开发中）
 
 ```bash
-# 在本地仓库根目录把这个 marketplace 加进 Claude Code
-/plugin marketplace add /Users/lujinian/Documents/workspace/claudcode/mem/hosts/claude-code
+# 在 Claude Code 里把仓库根当 marketplace 加进来
+/plugin marketplace add /Users/lujinian/Documents/workspace/claudcode/mem
 
 # 装上
 /plugin install ccpal@ccpal-marketplace
