@@ -966,8 +966,11 @@ class Handler(http.server.BaseHTTPRequestHandler):
                 fn = re.sub(r'[^\w一-龥\-\.\(\)]+', '-', fn)
                 if not fn.endswith('.md'):
                     fn += '.md'
-                # ASCII fallback + UTF-8 encoded for filename*
-                ascii_fn = re.sub(r'[^\w\-\.]', '_', fn)
+                # ASCII fallback + UTF-8 encoded for filename*.
+                # Force ASCII-only here so the latin-1 HTTP header encoding
+                # never sees a non-Latin character (Python \w matches
+                # Unicode by default, which includes CJK — was the bug).
+                ascii_fn = re.sub(r'[^a-zA-Z0-9\-\.]+', '_', fn) or "ccpal.md"
                 from urllib.parse import quote as _q
                 self.send_header(
                     "Content-Disposition",
