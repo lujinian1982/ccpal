@@ -44,10 +44,29 @@ CCPal 把 Claude Code 的本地对话（`~/.claude/projects/*.jsonl`）做成可
 | Phase | 内容 | 状态 |
 |---|---|---|
 | 1a | 拆出 `core/` + `hosts/` 骨架 + git init | ✅ |
-| 1b | Claude Code plugin（`.claude-plugin/` + `/ccpal` 命令 + Stop hook + bootstrap install.sh） | ✅ 当前 |
-| 1c | 把 `core/` bundle 进 plugin（解除 git-subdir 对父目录依赖） + 推 GitHub | ⏳ |
+| 1b | Claude Code plugin（`.claude-plugin/` + `/ccpal` 命令 + Stop hook + bootstrap install.sh） | ✅ |
+| 1c | 把 `core/` bundle 进 plugin（解除 git-subdir 对父目录依赖） | ✅ 当前 |
+| 1d | 推 GitHub + 真实环境验证 marketplace 流程（需要 Claude Code CLI 而非 Desktop） | ⏳ |
 | 2  | Codex MCP server（`open_ui` / `search` / `stats` tools） | ⏳ |
 | 3  | OpenCode plugin（slash 命令 + 共享 MCP） | ⏳ |
+
+### Dev workflow
+
+`core/` 是单一来源。每个 host plugin 的 `core/` 子目录是 bundle 副本（让 plugin 自洽分发）。改完 core 后**必须 sync**:
+
+```bash
+# 1. 编辑 core/ 下任何文件
+vim core/scripts/history-server.py
+
+# 2. 同步到所有 hosts/<name>/core/
+bash dev/sync-core.sh
+
+# 3. git add 两边
+git add core hosts/*/core
+git commit -m "..."
+```
+
+不要直接编辑 `hosts/<name>/core/` —— 下次 sync 会被覆盖。
 
 ### Claude Code plugin 用法（开发中）
 

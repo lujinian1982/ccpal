@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>CCPal · 套餐预算</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+  :root {
+    --bg: #f2f3f5;
+    --panel: #ffffff;
+    --border: #e6e8eb;
+    --text: #1a1d21;
+    --text-2: #5f6873;
+    --text-3: #9aa3ad;
+    --accent: #2563eb;
+    --green: #10b981;
+    --amber: #f59e0b;
+    --red: #ef4444;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, "PingFang SC", "Helvetica Neue", "SF Pro Text", sans-serif;
+    background: var(--bg); color: var(--text);
+    -webkit-font-smoothing: antialiased; line-height: 1.6;
+  }
+  .wrap { max-width: 1100px; margin: 0 auto; padding: 32px 24px 80px; }
+
+  h1 { font-size: 32px; font-weight: 700; letter-spacing: -0.5px; margin-bottom: 4px; }
+  .h-sub { font-size: 14px; color: var(--text-2); margin-bottom: 24px; max-width: 720px; }
+  .h-sub small { color: var(--text-3); font-size: 12px; }
+
+  /* 三栏窗口卡片 */
+  .windows {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 14px;
+    margin-bottom: 16px;
+  }
+  .win {
+    background: var(--panel); border-radius: 18px;
+    padding: 22px 22px 18px;
+    box-shadow: 0 1px 3px rgba(15,23,42,.04);
+    display: flex; flex-direction: column;
+    gap: 10px;
+  }
+  .win .head {
+    display: flex; align-items: baseline;
+    justify-content: space-between;
+  }
+  .win .head .label {
+    font-size: 11px; font-weight: 700;
+    color: var(--text-3); letter-spacing: 1.2px;
+    text-transform: uppercase;
+  }
+  .win .head .reset { font-size: 11px; color: var(--text-3); font-variant-numeric: tabular-nums; }
+
+  .win .ring-wrap {
+    display: grid; grid-template-columns: 110px 1fr;
+    gap: 14px; align-items: center;
+  }
+  .win .ring { position: relative; width: 110px; height: 110px; }
+  .win .ring svg { width: 100%; height: 100%; transform: rotate(-90deg); }
+  .win .ring .pct {
+    position: absolute; top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    text-align: center;
+  }
+  .win .ring .pct-num {
+    font-size: 24px; font-weight: 700;
+    letter-spacing: -1px; font-variant-numeric: tabular-nums;
+  }
+  .win .ring .pct-lbl { font-size: 10px; color: var(--text-3); margin-top: 1px; }
+
+  .win .num-out { font-size: 24px; font-weight: 700; letter-spacing: -0.5px; font-variant-numeric: tabular-nums; }
+  .win .num-out small { font-size: 11px; color: var(--text-3); font-weight: 500; margin-left: 4px; }
+  .win .breakdown { font-size: 11px; color: var(--text-3); line-height: 1.6; font-variant-numeric: tabular-nums; }
+  .win .breakdown b { color: var(--text-2); font-weight: 600; }
+
+  .win .quota-form {
+    display: flex; gap: 6px; align-items: center;
+    padding-top: 10px; border-top: 1px solid var(--border);
+    font-size: 11px;
+  }
+  .win .quota-form label { color: var(--text-3); flex-shrink: 0; }
+  .win .quota-form input {
+    border: 1px solid var(--border); border-radius: 5px;
+    padding: 4px 8px; font-size: 11px; width: 100%;
+    font-variant-numeric: tabular-nums; font-family: inherit;
+  }
+  .win .quota-form input:focus { outline: none; border-color: var(--accent); }
+
+  .win.over .num-out { color: var(--red); }
+  .win.high .num-out { color: var(--amber); }
+
+  /* 走势卡 */
+  .card {
+    background: var(--panel); border-radius: 18px;
+    padding: 22px 26px; margin-bottom: 16px;
+    box-shadow: 0 1px 3px rgba(15,23,42,.04);
+  }
+  .card .head { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 16px; }
+  .card .head h2 { font-size: 14px; font-weight: 700; }
+  .card .head .meta { font-size: 11px; color: var(--text-3); }
+
+  .chart { height: 140px; position: relative; }
+  .chart svg { width: 100%; height: 100%; display: block; }
+
+  .legend { display: flex; gap: 16px; font-size: 11px; color: var(--text-3); margin-top: 8px; flex-wrap: wrap; }
+  .legend .swatch { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 5px; vertical-align: -1px; }
+
+  .help-box {
+    background: linear-gradient(135deg, #eff6ff 0%, #fff 90%);
+    border: 1px solid #dbeafe; border-radius: 14px;
+    padding: 16px 20px; font-size: 12.5px;
+    color: var(--text-2); line-height: 1.75;
+    margin-bottom: 16px;
+  }
+  .help-box b { color: var(--text); }
+  .help-box .step { display: flex; gap: 8px; margin-top: 4px; }
+  .help-box .step span:first-child {
+    background: var(--accent); color: white;
+    width: 16px; height: 16px; border-radius: 50%;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: 10px; font-weight: 700; flex-shrink: 0; margin-top: 4px;
+  }
+
+  .loading { text-align: center; padding: 40px; color: var(--text-3); font-size: 13px; }
+
+  .tip { position: absolute; background: rgba(26,29,33,0.95); color: white;
+    padding: 6px 10px; border-radius: 6px; font-size: 11px;
+    pointer-events: none; transform: translate(-50%, -120%);
+    white-space: nowrap; font-variant-numeric: tabular-nums;
+    display: none; z-index: 10; }
+
+  @media (max-width: 800px) { .windows { grid-template-columns: 1fr; } }
+
+  /* === 统一顶栏 (page-header) === */
+  .page-header{position:sticky;top:0;z-index:100;height:52px;background:rgba(255,255,255,.85);backdrop-filter:blur(14px) saturate(180%);-webkit-backdrop-filter:blur(14px) saturate(180%);border-bottom:1px solid rgba(230,232,235,.7);display:flex;align-items:center;padding:0 20px;gap:14px;margin:-32px -24px 28px}
+  .back-btn{width:34px;height:34px;border-radius:10px;background:var(--panel);border:1px solid var(--border);color:var(--text-2);display:flex;align-items:center;justify-content:center;text-decoration:none;transition:all .18s cubic-bezier(.2,.8,.2,1);flex-shrink:0;box-shadow:0 1px 2px rgba(15,23,42,.04),0 0 0 0 rgba(37,99,235,0)}
+  .back-btn:hover{color:var(--accent);border-color:#dbeafe;transform:translateY(-1px);box-shadow:0 4px 12px rgba(37,99,235,.18),0 0 0 4px rgba(37,99,235,.06)}
+  .back-btn:active{transform:translateY(0) scale(.96)}
+  .back-btn svg{width:18px;height:18px}
+  .brand{font-size:14px;font-weight:600;letter-spacing:-.2px;color:var(--text);white-space:nowrap;display:flex;align-items:center}
+  .brand .dot{display:inline-block;width:6px;height:6px;background:var(--green,#10b981);border-radius:50%;margin-right:7px}
+  .brand .page-tag{color:var(--text-3);font-weight:400;margin-left:6px}
+  .page-nav{display:flex;gap:2px;margin-left:auto}
+  .page-nav a{text-decoration:none;color:var(--text-2);font-size:13px;padding:6px 12px;border-radius:7px;transition:all .12s;white-space:nowrap;font-family:inherit}
+  .page-nav a:hover{background:var(--bg);color:var(--text)}
+  .page-nav a.active{background:var(--accent-bg);color:var(--accent);font-weight:500;box-shadow:inset 0 0 0 1px rgba(37,99,235,.14)}
+
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <div class="page-header">
+    <a href="/" class="back-btn" title="返回 CCPal 主页"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg></a>
+    <div class="brand"><span class="dot"></span>CCPal<span class="page-tag">· 套餐</span></div>
+    <nav class="page-nav"><a href="/stats">统计</a><a href="/health">健康</a><a href="/budget" class="active">套餐</a><a href="/safety">数据安全</a></nav>
+  </div>
+
+  <h1>套餐还剩多少?</h1>
+  <p class="h-sub">
+    本机精确算近 5 小时和近 7 天的 token 累积。<br>
+    <small>ⓘ Anthropic 不公开 Max 套餐的具体 token 配额,只显示百分比。所以本页用<b>反推标定</b>:你在 Claude 设置看到 X%,把那一刻的本机 token 数填进去,以后就能算百分比。output token 是主要计费维度,cache_read 几乎免费但占上下文带宽。</small>
+  </p>
+
+  <div id="content"><div class="loading">读取中…</div></div>
+</div>
+
+<div class="tip" id="tip"></div>
+
+<script>
+const $ = id => document.getElementById(id);
+const fmt = n => n == null ? '—' : Math.round(n).toLocaleString();
+const fmtK = n => {
+  if (n == null) return '—';
+  if (n < 1000) return String(Math.round(n));
+  if (n < 1e6) return (n/1000).toFixed(1) + 'K';
+  if (n < 1e9) return (n/1e6).toFixed(2) + 'M';
+  return (n/1e9).toFixed(2) + 'B';
+};
+
+const QK_SESS = 'ccpal-quota-session-out';   // session 5h 输出 token quota
+const QK_WEEK = 'ccpal-quota-week-out';      // weekly 7d 输出 token quota
+const QK_DAY  = 'ccpal-quota-daily-out';     // daily quota (输出)
+
+let SESS_Q = parseInt(localStorage.getItem(QK_SESS) || '0', 10);
+let WEEK_Q = parseInt(localStorage.getItem(QK_WEEK) || '0', 10);
+let DAY_Q  = parseInt(localStorage.getItem(QK_DAY)  || '0', 10);
+
+function fmtSec(s) {
+  if (s < 60) return `${Math.round(s)} 秒`;
+  if (s < 3600) return `${Math.round(s/60)} 分`;
+  if (s < 86400) return `${Math.floor(s/3600)} 时 ${Math.round((s%3600)/60)} 分`;
+  return `${Math.floor(s/86400)} 天 ${Math.floor((s%86400)/3600)} 时`;
+}
+
+function todayLocal() {
+  const d = new Date(), p = n => String(n).padStart(2,'0');
+  return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}`;
+}
+
+/* 环形 SVG */
+function ring(pctVal, color) {
+  const R = 44, C = 2 * Math.PI * R;
+  const pct = Math.min(100, Math.max(0, pctVal));
+  const offset = C * (1 - pct / 100);
+  return `<svg viewBox="0 0 110 110">
+    <circle cx="55" cy="55" r="${R}" fill="none" stroke="#f0f2f4" stroke-width="9"/>
+    <circle cx="55" cy="55" r="${R}" fill="none" stroke="${color}" stroke-width="9"
+      stroke-linecap="round" stroke-dasharray="${C}" stroke-dashoffset="${offset}"
+      style="transition:stroke-dashoffset .8s ease"/>
+  </svg>`;
+}
+
+function ringColor(pct) {
+  if (pct >= 100) return '#ef4444';
+  if (pct >= 80) return '#f59e0b';
+  if (pct >= 50) return '#2563eb';
+  return '#10b981';
+}
+
+/* 折线/面积 */
+function drawLine(svg, data, key, color, withDots = false) {
+  const W = 600, H = 140, P = { l: 36, r: 8, t: 12, b: 22 };
+  svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+  svg.setAttribute('preserveAspectRatio', 'none');
+  svg.innerHTML = '';
+  const NS = 'http://www.w3.org/2000/svg';
+  if (!data.length) return;
+  const xs = data.map((_, i) => P.l + (i / Math.max(1, data.length - 1)) * (W - P.l - P.r));
+  const ys = data.map(d => d[key] || 0);
+  const yMax = Math.max(...ys, 1);
+  const yScale = v => H - P.b - (v / yMax) * (H - P.t - P.b);
+
+  // grid
+  for (let i = 0; i <= 3; i++) {
+    const y = P.t + (i / 3) * (H - P.t - P.b);
+    const v = Math.round(yMax * (1 - i / 3));
+    const line = document.createElementNS(NS, 'line');
+    line.setAttribute('x1', P.l); line.setAttribute('x2', W - P.r);
+    line.setAttribute('y1', y); line.setAttribute('y2', y);
+    line.setAttribute('stroke', '#f0f2f4'); line.setAttribute('stroke-width', '1');
+    svg.appendChild(line);
+    const lab = document.createElementNS(NS, 'text');
+    lab.setAttribute('x', P.l - 6); lab.setAttribute('y', y + 3);
+    lab.setAttribute('text-anchor', 'end');
+    lab.setAttribute('font-size', '10');
+    lab.setAttribute('fill', '#9aa3ad');
+    lab.setAttribute('font-family', 'ui-monospace,Menlo,monospace');
+    lab.textContent = fmtK(v);
+    svg.appendChild(lab);
+  }
+
+  // gradient
+  const defs = document.createElementNS(NS, 'defs');
+  defs.innerHTML = `<linearGradient id="g-${key}-${color.replace('#','')}" x1="0" x2="0" y1="0" y2="1">
+    <stop offset="0%" stop-color="${color}" stop-opacity="0.3"/>
+    <stop offset="100%" stop-color="${color}" stop-opacity="0"/>
+  </linearGradient>`;
+  svg.appendChild(defs);
+
+  // area
+  const linePts = xs.map((x, i) => `${x},${yScale(ys[i])}`);
+  const area = document.createElementNS(NS, 'path');
+  area.setAttribute('d', `M${P.l},${H-P.b} L${linePts.join(' L')} L${W-P.r},${H-P.b} Z`);
+  area.setAttribute('fill', `url(#g-${key}-${color.replace('#','')})`);
+  svg.appendChild(area);
+
+  // line
+  const line = document.createElementNS(NS, 'path');
+  line.setAttribute('d', `M${linePts.join(' L')}`);
+  line.setAttribute('fill', 'none'); line.setAttribute('stroke', color);
+  line.setAttribute('stroke-width', '1.5');
+  svg.appendChild(line);
+}
+
+async function load() {
+  const r = await fetch('/api/usage?_=' + Date.now());
+  const u = await r.json();
+  const r2 = await fetch('/api/stats?_=' + Date.now());
+  const stats = await r2.json();
+
+  const sess = u.session_5h, week = u.weekly_7d;
+  const sessOut = sess.total.out, weekOut = week.total.out;
+
+  // 今日(用 daily 数据)
+  const todayStr = todayLocal();
+  const todayD = (stats.daily || []).find(d => d.day === todayStr) || { in: 0, out: 0, read: 0 };
+  const dayOut = todayD.out;
+
+  // 重置预测
+  const sessReset = 5*3600;  // 简化:5h 滚动,任何时刻往前 5h
+  const weekReset = 7*86400;
+
+  // 算百分比 (有 quota 才算)
+  const sessPct = SESS_Q > 0 ? (sessOut / SESS_Q * 100) : null;
+  const weekPct = WEEK_Q > 0 ? (weekOut / WEEK_Q * 100) : null;
+  const dayPct  = DAY_Q  > 0 ? (dayOut  / DAY_Q  * 100) : null;
+
+  const winCard = (cfg) => {
+    const cls = cfg.pct == null ? '' : (cfg.pct >= 100 ? 'over' : cfg.pct >= 80 ? 'high' : '');
+    const ringHtml = cfg.pct != null ? `
+      <div class="ring">
+        ${ring(cfg.pct, ringColor(cfg.pct))}
+        <div class="pct">
+          <div class="pct-num" style="color:${ringColor(cfg.pct)}">${cfg.pct.toFixed(0)}<span style="font-size:14px">%</span></div>
+          <div class="pct-lbl">已用</div>
+        </div>
+      </div>
+      <div>
+        <div class="num-out">${fmtK(cfg.out)} <small>output</small></div>
+        <div class="breakdown">
+          input <b>${fmtK(cfg.inp)}</b><br>
+          cache 命中 <b>${fmtK(cfg.read)}</b> <small style="color:#10b981">(免费)</small><br>
+          配额估值 <b>${fmtK(cfg.quota)}</b> output
+        </div>
+      </div>
+    ` : `
+      <div style="grid-column:1/-1">
+        <div class="num-out">${fmtK(cfg.out)} <small>output token</small></div>
+        <div class="breakdown" style="margin-top:6px">
+          input <b>${fmtK(cfg.inp)}</b> ·
+          cache 命中 <b>${fmtK(cfg.read)}</b> <small style="color:#10b981">(免费)</small>
+        </div>
+        <div class="breakdown" style="margin-top:6px;color:var(--accent)">↓ 输入配额估值激活百分比</div>
+      </div>
+    `;
+    return `<div class="win ${cls}">
+      <div class="head">
+        <span class="label">${cfg.label}</span>
+        <span class="reset">${cfg.reset}</span>
+      </div>
+      <div class="ring-wrap">${ringHtml}</div>
+      <div class="quota-form">
+        <label>${cfg.quotaLabel}:</label>
+        <input type="number" id="${cfg.id}" value="${cfg.quota || ''}" placeholder="0" min="0" step="100000">
+      </div>
+    </div>`;
+  };
+
+  let html = `
+    <div class="help-box">
+      <b>怎么标定 quota?</b>
+      <div class="step"><span>1</span><span>打开 Claude 设置 → Usage,看 Current session 和 Weekly limits 的百分比</span></div>
+      <div class="step"><span>2</span><span>对照本页此刻的 output token 数,反推: <b>quota = output ÷ 百分比 × 100</b></span></div>
+      <div class="step"><span>3</span><span>把估算值填到下面输入框,环形进度就准了。这是一次性标定,以后会持续准确。</span></div>
+    </div>
+
+    <div class="windows">
+      ${winCard({
+        label: 'Session · 近 5 小时',
+        out: sessOut, inp: sess.total.in, read: sess.total.read,
+        quota: SESS_Q, pct: sessPct, id: 'qs',
+        quotaLabel: 'Session output 配额',
+        reset: '5h 滚动'
+      })}
+      ${winCard({
+        label: 'Weekly · 近 7 天',
+        out: weekOut, inp: week.total.in, read: week.total.read,
+        quota: WEEK_Q, pct: weekPct, id: 'qw',
+        quotaLabel: 'Weekly output 配额',
+        reset: '7d 滚动'
+      })}
+      ${winCard({
+        label: 'Daily · 今日 (本地)',
+        out: dayOut, inp: todayD.in, read: todayD.read,
+        quota: DAY_Q, pct: dayPct, id: 'qd',
+        quotaLabel: '日 output 预算',
+        reset: '本地零点'
+      })}
+    </div>
+
+    <div class="card">
+      <div class="head"><h2>Session 5h 走势 · 每 15 分钟</h2><span class="meta">看 token 是哪段时间烧掉的</span></div>
+      <div class="chart"><svg id="chart-sess"></svg></div>
+      <div class="legend">
+        <span><span class="swatch" style="background:#7c3aed"></span>output token</span>
+        <span><span class="swatch" style="background:#2563eb"></span>input token</span>
+        <span style="color:#9aa3ad">cache_read 不画 (量级太大,几乎免费)</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="head"><h2>Weekly 7d 走势 · 每小时</h2><span class="meta">看每天的高峰是几点</span></div>
+      <div class="chart"><svg id="chart-week"></svg></div>
+    </div>
+  `;
+  $('content').innerHTML = html;
+
+  drawLine($('chart-sess'), sess.buckets, 'out', '#7c3aed');
+  drawLine($('chart-week'), week.buckets, 'out', '#2563eb');
+
+  // 输入框监听
+  ['qs', 'qw', 'qd'].forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.addEventListener('change', () => {
+      const v = parseInt(el.value, 10) || 0;
+      if (id === 'qs') { SESS_Q = v; localStorage.setItem(QK_SESS, v); }
+      if (id === 'qw') { WEEK_Q = v; localStorage.setItem(QK_WEEK, v); }
+      if (id === 'qd') { DAY_Q  = v; localStorage.setItem(QK_DAY,  v); }
+      load();
+    });
+  });
+}
+
+load().catch(e => { $('content').innerHTML = `<div class="loading" style="color:#ef4444">加载失败: ${e.message}</div>`; });
+setInterval(load, 60000);  // 每分钟刷新
+</script>
+</body>
+</html>
