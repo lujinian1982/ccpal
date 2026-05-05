@@ -1,5 +1,5 @@
 # CCPal
-
+项目是基于老罗的代码进行的修改。
 > **C**laude **C**ode **Pal** · macOS-only · 让你的 Claude Code 对话**永久保留 + 可视化检索 + 跨工具读取** · 全本地零云端
 
 ---
