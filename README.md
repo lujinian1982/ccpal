@@ -344,7 +344,7 @@ git commit -m "..."
 
 ## 致谢
 
-CCPal 是 [@lujinian](https://github.com/lujinian1982) 的个人工具,日常吃自己的狗粮。
+老罗最早共享了他的想法和代码
 
 如果你也在用,issue / PR 欢迎,但不承诺响应速度 —— 工程预算优先用在让自己更顺手的地方。
 
